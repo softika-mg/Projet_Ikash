@@ -15,7 +15,7 @@ router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
 # Dépendance pour obtenir la session de la DB
 @router.get("/", response_model=List[Profile])
-def get_profiles():
+def get_profiles(api_key: str = Depends(get_api_key)):
     with Session(engine) as session:
         # Pour l'instant on renvoie tout pour tester
         return session.query(Profile).all()

@@ -1,0 +1,69 @@
+name: ikash_interface
+description: "iKash Mobile App - AI Powered SMS Parser"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # UI & Design
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.8
+  flex_color_scheme: ^8.4.0
+  lucide_icons: ^0.257.0
+  flutter_animate: ^4.5.0
+  font_awesome_flutter: ^10.7.0
+  shadcn_ui: ^0.45.2
+  shared_preferences: ^2.5.4
+
+  # State Management
+  flutter_riverpod: ^3.2.1
+
+  # Network & Utils
+  http: ^1.1.0
+  intl: ^0.20.2
+  web_socket_channel: ^3.0.3
+
+  # SMS / Permissions
+  flutter_sms_inbox: ^1.0.4
+  permission_handler: ^12.0.1
+  flutter_login: ^5.0.0
+  salomon_bottom_bar: ^3.3.0
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.18 # Pour le support SQLite sur mobile
+  path_provider: ^2.1.1
+  path: ^1.8.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  drift_dev: ^2.14.1
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 21 # Doit correspondre à ton build.gradle
+  adaptive_icon_background: "#0F172A" # Ta couleur Slate (AppTheme.bgColorDark)
+  adaptive_icon_foreground: "assets/icons/icon.png"
+
+# Force la bonne version du plugin Android natif
+dependency_overrides:
+  permission_handler_android: ^12.0.1

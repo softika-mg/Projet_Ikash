@@ -26,5 +26,7 @@ def add_transaction(transaction: Transaction, session: Session = Depends(get_ses
 
 
 @router.get("/")
-def list_transactions(session: Session = Depends(get_session)):
+def list_transactions(
+    session: Session = Depends(get_session), api_key: str = Depends(get_api_key)
+):
     return transaction_service.get_all_transactions(session)

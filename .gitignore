@@ -1,18 +1,67 @@
-# Python
+# --- PROJET IKASH : GLOBAL IGNORE ---
+
+# Système & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
+
+# Sublime Text (Project & Workspace)
+*.sublime-project
+*.sublime-workspace
+
+# --- BACKEND PYTHON (FastAPI) ---
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .env
+.pytest_cache/
 
-# Flutter / Dart
+# --- MOBILE (Flutter / Dart) ---
+# Comme ton projet est dans un sous-dossier, on utilise des patterns récursifs
+**/Mobile/ikash_interface/.dart_tool/
+**/Mobile/ikash_interface/.flutter-plugins
+**/Mobile/ikash_interface/.flutter-plugins-dependencies
+**/Mobile/ikash_interface/.packages
+**/Mobile/ikash_interface/build/
+
+# Ignorer les exécutables générés
+*.ipa
+*.apk
+*.exe
+
+# Spécifique Android (dans le dossier mobile)
+**/Mobile/ikash_interface/android/.gradle/
+**/Mobile/ikash_interface/android/local.properties
+**/Mobile/ikash_interface/android/key.properties
+
+# --- PROJET VIEW (Spécifique à ton organisation) ---
+/project_view/
+# --- MOBILE (Flutter / Dart) ---
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
 build/
-*.ipa
-*.apk
 
-# IDE
-.vscode/
-.idea/
+# Patterns récursifs pour attraper tous les dossiers build/ et .dart_tool/
+**/build/
+**/.dart_tool/
+
+# --- ANDROID (Universel) ---
+**/.gradle/
+**/local.properties
+**/project.skp
+**/captures/
+**/android/.gradle/
+**/android/local.properties
+**/android/generated/
+**/android/app/src/main/res/generated/
+**/android/key.properties
+*.iml
+.idea/*.xml
+
+/project_view/
