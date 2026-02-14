@@ -43,7 +43,7 @@ Le projet est structuré pour séparer strictement l'infrastructure, la logique 
 ---
 
 ## 👤 Développement & Contact
-* **Lovaxcoding** - Développeur Fullstack & DevOps stagiaire chez **SOFTIKA MG**
+* **Lovaxcoding** - Développeur Fullstack stagiaire chez **SOFTIKA MG**
 * **Contact** : [lnantenaina78@gmail.com](mailto:lnantenaina78@gmail.com)
 * **Prototype** : [Maquette Figma](https://crayon-repair-18309931.figma.site/)
 
