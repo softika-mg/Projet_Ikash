@@ -21,7 +21,7 @@ final currentUserProvider = NotifierProvider<CurrentUserNotifier, Profile?>(() {
 // 3. Le Service d'Authentification
 class AuthService {
   final AppDatabase db;
-  final dynamic ref;
+  final Ref ref;
 
   AuthService(this.db, this.ref);
 
@@ -55,27 +55,34 @@ class AuthService {
   }
 
   /// Tentative de connexion via PIN
-  Future<bool> login(String pin) async {
-    final profile = await db.getProfileByPin(pin);
+  // Dans ton AuthService ou AppDatabase
+/// Tentative de connexion via PIN
+Future<Profile?> login(String pin) async {
+  // On utilise db.select et db.profiles
+  final user = await (db.select(db.profiles)..where((t) => t.codePin.equals(pin))).getSingleOrNull();
 
-    if (profile != null) {
-      // On met à jour l'état global via le notifier
-      ref.read(currentUserProvider.notifier).setUser(profile);
-      return true;
-    }
-    return false;
+  if (user != null) {
+    // Si l'utilisateur est trouvé, on met à jour le provider de session
+    ref.read(currentUserProvider.notifier).setUser(user);
   }
 
-  // Dans AuthService
-Future<void> logout() async {
-  // On remet l'utilisateur à null
-  ref.read(currentUserProvider.notifier).setUser(null);
-  // Optionnel : tu peux aussi vider d'autres états ici si nécessaire
+  return user;
 }
+  // Dans AuthService
+  Future<void> logout() async {
+    // On remet l'utilisateur à null
+    ref.read(currentUserProvider.notifier).setUser(null);
+    // Optionnel : tu peux aussi vider d'autres états ici si nécessaire
+  }
 }
 
 // 4. Le Provider pour le Service Auth
 final authServiceProvider = Provider((ref) {
   final db = ref.watch(databaseProvider);
   return AuthService(db, ref);
+});
+
+final allPendingSmsProvider = StreamProvider<List<SmsReceivedData>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllPendingSms();
 });

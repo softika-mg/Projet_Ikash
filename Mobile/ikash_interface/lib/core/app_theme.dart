@@ -16,7 +16,7 @@ class AppTheme {
       useM2StyleDividerInM3: true,
       alignedDropdown: true,
       useInputDecoratorThemeInDialogs: true,
-      defaultRadius: 12.0,// Coins arrondis iKash
+      defaultRadius: 12.0, // Coins arrondis iKash
     ),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     useMaterial3: true,

@@ -1,204 +1,203 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../database/app_database.dart';
+import '../models/enum.dart';
+import '../core/utils/formatters.dart';
+import '../services/auth_service.dart';
 
-class AdminDashboard extends StatelessWidget {
+
+class AdminDashboard extends ConsumerWidget {
   const AdminDashboard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final db = ref.watch(databaseProvider);
 
     return Scaffold(
-      // Couleur de fond adaptative (gris très clair ou noir profond)
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.grey.shade50,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20), // Espace pour la barre de statut
-            Text(
-              "Vue d'ensemble",
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.textTheme.titleLarge?.color,
-              ),
-            ),
-            const SizedBox(height: 20),
+      body: StreamBuilder<List<Transaction>>(
+        stream: db.watchAllTransactions(),
+        builder: (context, snapshot) {
+          final transactions = snapshot.data ?? [];
 
-            // --- Cartes de Performance Globales ---
-            Row(
+          // --- LOGIQUE DE CALCUL PAR PUCE ---
+          double volumeTotal = 0;
+          Map<OperatorType, double> volumeParPuce = {
+            OperatorType.telma: 0,
+            OperatorType.orange: 0,
+            OperatorType.airtel: 0,
+          };
+          Map<OperatorType, int> nombreOpsParPuce = {
+            OperatorType.telma: 0,
+            OperatorType.orange: 0,
+            OperatorType.airtel: 0,
+          };
+
+          for (var tx in transactions) {
+            volumeTotal += tx.montant;
+            volumeParPuce[tx.operateur] = (volumeParPuce[tx.operateur] ?? 0) + tx.montant;
+            nombreOpsParPuce[tx.operateur] = (nombreOpsParPuce[tx.operateur] ?? 0) + 1;
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSummaryCard(
-                  title: "Volume Total",
-                  value: "45.8M Ar",
-                  icon: LucideIcons.barChart3,
-                  color: isDark ? Colors.indigo.shade400 : Colors.indigo,
+                const SizedBox(height: 20),
+                Text(
+                  "Performance des Puces",
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(width: 15),
-                _buildSummaryCard(
-                  title: "Agents Actifs",
-                  value: "12 / 15",
-                  icon: LucideIcons.users,
-                  color: isDark ? Colors.green.shade600 : Colors.green,
+                const SizedBox(height: 20),
+
+                // --- Cartes de Performance Globales ---
+                Row(
+                  children: [
+                    _buildSummaryCard(
+                      title: "Volume Global",
+                      value: CurrencyFormatter.format(volumeTotal),
+                      icon: LucideIcons.barChart3,
+                      color: isDark ? Colors.indigo.shade400 : Colors.indigo,
+                    ),
+                    const SizedBox(width: 15),
+                    _buildSummaryCard(
+                      title: "Puces Actives",
+                      value: "3 / 3",
+                      icon: LucideIcons.smartphone, // Icone plus adaptée
+                      color: isDark ? Colors.teal.shade600 : Colors.teal,
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: 25),
+
+                // --- Section Classement des Puces ---
+                Text(
+                  "Activité par SIM",
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 15),
+
+                // On génère dynamiquement les cartes pour chaque opérateur
+                ...OperatorType.values.map((op) => _buildSimRankCard(
+                  theme,
+                  op.name.toUpperCase(),
+                  CurrencyFormatter.format(volumeParPuce[op] ?? 0),
+                  "${nombreOpsParPuce[op]} opérations",
+                  _getOpColor(op),
+                )),
+
+                const SizedBox(height: 30),
+
+                // --- Répartition Visuelle ---
+                _buildDistributionSection(theme, isDark, volumeParPuce, volumeTotal),
               ],
             ),
-
-            const SizedBox(height: 25),
-
-            // --- Section Agents ---
-            Text(
-              "Top Agents (Aujourd'hui)",
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
-            _buildAgentRankCard(theme, "Jean Marc", "8.2M Ar", "24 ops", true),
-            _buildAgentRankCard(theme, "Faly R.", "5.4M Ar", "18 ops", false),
-            _buildAgentRankCard(theme, "Sitraka", "3.1M Ar", "12 ops", false),
-
-            const SizedBox(height: 30),
-
-            // --- Graphique de Répartition (Conteneur Thémé) ---
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark ? theme.dividerColor.withOpacity(0.1) : Colors.grey.shade200,
-                ),
-                boxShadow: [
-                  if (!isDark)
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Répartition par Opérateur",
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildAdminProgress(
-                    theme,
-                    "TELMA / Mvola",
-                    0.70,
-                    Colors.yellow.shade800,
-                  ),
-                  _buildAdminProgress(theme, "ORANGE Money", 0.20, Colors.orange),
-                  _buildAdminProgress(theme, "AIRTEL Money", 0.10, Colors.red),
-                ],
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSummaryCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 15),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // --- COMPOSANTS UI ---
 
-  Widget _buildAgentRankCard(
-    ThemeData theme,
-    String name,
-    String volume,
-    String ops,
-    bool isTop,
-  ) {
-    final isDark = theme.brightness == Brightness.dark;
-
+  Widget _buildSimRankCard(ThemeData theme, String name, String volume, String desc, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isTop
-              ? (isDark ? Colors.indigo.shade400 : Colors.indigo.shade200)
-              : (isDark ? theme.dividerColor.withOpacity(0.1) : Colors.transparent),
-          width: isTop ? 2 : 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.grey.shade100,
-            child: Icon(LucideIcons.user, size: 18, color: theme.primaryColor),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(LucideIcons.smartphone, size: 20, color: color),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)
-                ),
-                Text(
-                  ops,
-                  style: theme.textTheme.bodySmall,
-                ),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(desc, style: theme.textTheme.bodySmall),
               ],
             ),
           ),
           Text(
             volume,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.indigo.shade300 : Colors.indigo.shade700,
-              fontSize: 15,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDistributionSection(ThemeData theme, bool isDark, Map<OperatorType, double> volumes, double total) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Répartition du Volume", style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
+          ...OperatorType.values.map((op) {
+            double percent = total > 0 ? (volumes[op] ?? 0) / total : 0;
+            return _buildAdminProgress(theme, op.name.toUpperCase(), percent, _getOpColor(op));
+          }),
+        ],
+      ),
+    );
+  }
+
+  // --- HELPERS ---
+
+  Color _getOpColor(OperatorType type) {
+  switch (type) {
+    case OperatorType.telma:
+      return Colors.yellow.shade800;
+    case OperatorType.orange:
+      return Colors.orange;
+    case OperatorType.airtel:
+      return Colors.red;
+    case OperatorType.autre: // Ajout du cas manquant
+      return Colors.grey;
+  }
+}
+
+  Widget _buildSummaryCard({required String title, required String value, required IconData icon, required Color color}) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 15),
+            FittedBox(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
@@ -211,28 +210,17 @@ class AdminDashboard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              Text(
-                "${(percent * 100).toInt()}%",
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+              Text("${(percent * 100).toInt()}%", style: TextStyle(color: color, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 8),
-          ClipRRect(
+          LinearProgressIndicator(
+            value: percent,
+            backgroundColor: color.withOpacity(0.1),
+            color: color,
+            minHeight: 10,
             borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: percent,
-              backgroundColor: color.withOpacity(0.1),
-              color: color,
-              minHeight: 10,
-            ),
           ),
         ],
       ),

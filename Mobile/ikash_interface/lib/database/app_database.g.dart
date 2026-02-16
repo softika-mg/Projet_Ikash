@@ -456,6 +456,367 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   }
 }
 
+class $AgentNumbersTable extends AgentNumbers
+    with TableInfo<$AgentNumbersTable, AgentNumber> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentNumbersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<int> profileId = GeneratedColumn<int>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES profiles (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<OperatorType, int> operateur =
+      GeneratedColumn<int>(
+        'operateur',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<OperatorType>($AgentNumbersTable.$converteroperateur);
+  static const VerificationMeta _numeroPuceMeta = const VerificationMeta(
+    'numeroPuce',
+  );
+  @override
+  late final GeneratedColumn<String> numeroPuce = GeneratedColumn<String>(
+    'numero_puce',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _soldePuceMeta = const VerificationMeta(
+    'soldePuce',
+  );
+  @override
+  late final GeneratedColumn<double> soldePuce = GeneratedColumn<double>(
+    'solde_puce',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    profileId,
+    operateur,
+    numeroPuce,
+    soldePuce,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_numbers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentNumber> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('numero_puce')) {
+      context.handle(
+        _numeroPuceMeta,
+        numeroPuce.isAcceptableOrUnknown(data['numero_puce']!, _numeroPuceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numeroPuceMeta);
+    }
+    if (data.containsKey('solde_puce')) {
+      context.handle(
+        _soldePuceMeta,
+        soldePuce.isAcceptableOrUnknown(data['solde_puce']!, _soldePuceMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentNumber map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentNumber(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      operateur: $AgentNumbersTable.$converteroperateur.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}operateur'],
+        )!,
+      ),
+      numeroPuce: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero_puce'],
+      )!,
+      soldePuce: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}solde_puce'],
+      )!,
+    );
+  }
+
+  @override
+  $AgentNumbersTable createAlias(String alias) {
+    return $AgentNumbersTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<OperatorType, int, int> $converteroperateur =
+      const EnumIndexConverter<OperatorType>(OperatorType.values);
+}
+
+class AgentNumber extends DataClass implements Insertable<AgentNumber> {
+  final int id;
+  final int profileId;
+  final OperatorType operateur;
+  final String numeroPuce;
+  final double soldePuce;
+  const AgentNumber({
+    required this.id,
+    required this.profileId,
+    required this.operateur,
+    required this.numeroPuce,
+    required this.soldePuce,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<int>(profileId);
+    {
+      map['operateur'] = Variable<int>(
+        $AgentNumbersTable.$converteroperateur.toSql(operateur),
+      );
+    }
+    map['numero_puce'] = Variable<String>(numeroPuce);
+    map['solde_puce'] = Variable<double>(soldePuce);
+    return map;
+  }
+
+  AgentNumbersCompanion toCompanion(bool nullToAbsent) {
+    return AgentNumbersCompanion(
+      id: Value(id),
+      profileId: Value(profileId),
+      operateur: Value(operateur),
+      numeroPuce: Value(numeroPuce),
+      soldePuce: Value(soldePuce),
+    );
+  }
+
+  factory AgentNumber.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentNumber(
+      id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<int>(json['profileId']),
+      operateur: $AgentNumbersTable.$converteroperateur.fromJson(
+        serializer.fromJson<int>(json['operateur']),
+      ),
+      numeroPuce: serializer.fromJson<String>(json['numeroPuce']),
+      soldePuce: serializer.fromJson<double>(json['soldePuce']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<int>(profileId),
+      'operateur': serializer.toJson<int>(
+        $AgentNumbersTable.$converteroperateur.toJson(operateur),
+      ),
+      'numeroPuce': serializer.toJson<String>(numeroPuce),
+      'soldePuce': serializer.toJson<double>(soldePuce),
+    };
+  }
+
+  AgentNumber copyWith({
+    int? id,
+    int? profileId,
+    OperatorType? operateur,
+    String? numeroPuce,
+    double? soldePuce,
+  }) => AgentNumber(
+    id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
+    operateur: operateur ?? this.operateur,
+    numeroPuce: numeroPuce ?? this.numeroPuce,
+    soldePuce: soldePuce ?? this.soldePuce,
+  );
+  AgentNumber copyWithCompanion(AgentNumbersCompanion data) {
+    return AgentNumber(
+      id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      operateur: data.operateur.present ? data.operateur.value : this.operateur,
+      numeroPuce: data.numeroPuce.present
+          ? data.numeroPuce.value
+          : this.numeroPuce,
+      soldePuce: data.soldePuce.present ? data.soldePuce.value : this.soldePuce,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentNumber(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('operateur: $operateur, ')
+          ..write('numeroPuce: $numeroPuce, ')
+          ..write('soldePuce: $soldePuce')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, profileId, operateur, numeroPuce, soldePuce);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentNumber &&
+          other.id == this.id &&
+          other.profileId == this.profileId &&
+          other.operateur == this.operateur &&
+          other.numeroPuce == this.numeroPuce &&
+          other.soldePuce == this.soldePuce);
+}
+
+class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
+  final Value<int> id;
+  final Value<int> profileId;
+  final Value<OperatorType> operateur;
+  final Value<String> numeroPuce;
+  final Value<double> soldePuce;
+  const AgentNumbersCompanion({
+    this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
+    this.operateur = const Value.absent(),
+    this.numeroPuce = const Value.absent(),
+    this.soldePuce = const Value.absent(),
+  });
+  AgentNumbersCompanion.insert({
+    this.id = const Value.absent(),
+    required int profileId,
+    required OperatorType operateur,
+    required String numeroPuce,
+    this.soldePuce = const Value.absent(),
+  }) : profileId = Value(profileId),
+       operateur = Value(operateur),
+       numeroPuce = Value(numeroPuce);
+  static Insertable<AgentNumber> custom({
+    Expression<int>? id,
+    Expression<int>? profileId,
+    Expression<int>? operateur,
+    Expression<String>? numeroPuce,
+    Expression<double>? soldePuce,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
+      if (operateur != null) 'operateur': operateur,
+      if (numeroPuce != null) 'numero_puce': numeroPuce,
+      if (soldePuce != null) 'solde_puce': soldePuce,
+    });
+  }
+
+  AgentNumbersCompanion copyWith({
+    Value<int>? id,
+    Value<int>? profileId,
+    Value<OperatorType>? operateur,
+    Value<String>? numeroPuce,
+    Value<double>? soldePuce,
+  }) {
+    return AgentNumbersCompanion(
+      id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
+      operateur: operateur ?? this.operateur,
+      numeroPuce: numeroPuce ?? this.numeroPuce,
+      soldePuce: soldePuce ?? this.soldePuce,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<int>(profileId.value);
+    }
+    if (operateur.present) {
+      map['operateur'] = Variable<int>(
+        $AgentNumbersTable.$converteroperateur.toSql(operateur.value),
+      );
+    }
+    if (numeroPuce.present) {
+      map['numero_puce'] = Variable<String>(numeroPuce.value);
+    }
+    if (soldePuce.present) {
+      map['solde_puce'] = Variable<double>(soldePuce.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentNumbersCompanion(')
+          ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
+          ..write('operateur: $operateur, ')
+          ..write('numeroPuce: $numeroPuce, ')
+          ..write('soldePuce: $soldePuce')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTable extends Transactions
     with TableInfo<$TransactionsTable, Transaction> {
   @override
@@ -526,6 +887,17 @@ class $TransactionsTable extends Transactions
         requiredDuringInsert: false,
         defaultValue: Constant(TransactionStatus.reussi.index),
       ).withConverter<TransactionStatus>($TransactionsTable.$converterstatut);
+  static const VerificationMeta _nomClientMeta = const VerificationMeta(
+    'nomClient',
+  );
+  @override
+  late final GeneratedColumn<String> nomClient = GeneratedColumn<String>(
+    'nom_client',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _bonusMeta = const VerificationMeta('bonus');
   @override
   late final GeneratedColumn<double> bonus = GeneratedColumn<double>(
@@ -588,6 +960,20 @@ class $TransactionsTable extends Transactions
       'REFERENCES profiles (id)',
     ),
   );
+  static const VerificationMeta _agentNumberIdMeta = const VerificationMeta(
+    'agentNumberId',
+  );
+  @override
+  late final GeneratedColumn<int> agentNumberId = GeneratedColumn<int>(
+    'agent_number_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES agent_numbers (id)',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -596,11 +982,13 @@ class $TransactionsTable extends Transactions
     type,
     montant,
     statut,
+    nomClient,
     bonus,
     numeroClient,
     reference,
     estSaisieManuelle,
     agentId,
+    agentNumberId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -630,6 +1018,12 @@ class $TransactionsTable extends Transactions
       );
     } else if (isInserting) {
       context.missing(_montantMeta);
+    }
+    if (data.containsKey('nom_client')) {
+      context.handle(
+        _nomClientMeta,
+        nomClient.isAcceptableOrUnknown(data['nom_client']!, _nomClientMeta),
+      );
     }
     if (data.containsKey('bonus')) {
       context.handle(
@@ -671,6 +1065,15 @@ class $TransactionsTable extends Transactions
     } else if (isInserting) {
       context.missing(_agentIdMeta);
     }
+    if (data.containsKey('agent_number_id')) {
+      context.handle(
+        _agentNumberIdMeta,
+        agentNumberId.isAcceptableOrUnknown(
+          data['agent_number_id']!,
+          _agentNumberIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -710,6 +1113,10 @@ class $TransactionsTable extends Transactions
           data['${effectivePrefix}statut'],
         )!,
       ),
+      nomClient: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nom_client'],
+      ),
       bonus: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}bonus'],
@@ -730,6 +1137,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}agent_id'],
       )!,
+      agentNumberId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}agent_number_id'],
+      ),
     );
   }
 
@@ -753,11 +1164,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final TransactionType type;
   final double montant;
   final TransactionStatus statut;
+  final String? nomClient;
   final double bonus;
   final String? numeroClient;
   final String reference;
   final bool estSaisieManuelle;
   final int agentId;
+  final int? agentNumberId;
   const Transaction({
     required this.id,
     required this.horodatage,
@@ -765,11 +1178,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.type,
     required this.montant,
     required this.statut,
+    this.nomClient,
     required this.bonus,
     this.numeroClient,
     required this.reference,
     required this.estSaisieManuelle,
     required this.agentId,
+    this.agentNumberId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -792,6 +1207,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         $TransactionsTable.$converterstatut.toSql(statut),
       );
     }
+    if (!nullToAbsent || nomClient != null) {
+      map['nom_client'] = Variable<String>(nomClient);
+    }
     map['bonus'] = Variable<double>(bonus);
     if (!nullToAbsent || numeroClient != null) {
       map['numero_client'] = Variable<String>(numeroClient);
@@ -799,6 +1217,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     map['reference'] = Variable<String>(reference);
     map['est_saisie_manuelle'] = Variable<bool>(estSaisieManuelle);
     map['agent_id'] = Variable<int>(agentId);
+    if (!nullToAbsent || agentNumberId != null) {
+      map['agent_number_id'] = Variable<int>(agentNumberId);
+    }
     return map;
   }
 
@@ -810,6 +1231,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       type: Value(type),
       montant: Value(montant),
       statut: Value(statut),
+      nomClient: nomClient == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nomClient),
       bonus: Value(bonus),
       numeroClient: numeroClient == null && nullToAbsent
           ? const Value.absent()
@@ -817,6 +1241,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       reference: Value(reference),
       estSaisieManuelle: Value(estSaisieManuelle),
       agentId: Value(agentId),
+      agentNumberId: agentNumberId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(agentNumberId),
     );
   }
 
@@ -838,11 +1265,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       statut: $TransactionsTable.$converterstatut.fromJson(
         serializer.fromJson<int>(json['statut']),
       ),
+      nomClient: serializer.fromJson<String?>(json['nomClient']),
       bonus: serializer.fromJson<double>(json['bonus']),
       numeroClient: serializer.fromJson<String?>(json['numeroClient']),
       reference: serializer.fromJson<String>(json['reference']),
       estSaisieManuelle: serializer.fromJson<bool>(json['estSaisieManuelle']),
       agentId: serializer.fromJson<int>(json['agentId']),
+      agentNumberId: serializer.fromJson<int?>(json['agentNumberId']),
     );
   }
   @override
@@ -861,11 +1290,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'statut': serializer.toJson<int>(
         $TransactionsTable.$converterstatut.toJson(statut),
       ),
+      'nomClient': serializer.toJson<String?>(nomClient),
       'bonus': serializer.toJson<double>(bonus),
       'numeroClient': serializer.toJson<String?>(numeroClient),
       'reference': serializer.toJson<String>(reference),
       'estSaisieManuelle': serializer.toJson<bool>(estSaisieManuelle),
       'agentId': serializer.toJson<int>(agentId),
+      'agentNumberId': serializer.toJson<int?>(agentNumberId),
     };
   }
 
@@ -876,11 +1307,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     TransactionType? type,
     double? montant,
     TransactionStatus? statut,
+    Value<String?> nomClient = const Value.absent(),
     double? bonus,
     Value<String?> numeroClient = const Value.absent(),
     String? reference,
     bool? estSaisieManuelle,
     int? agentId,
+    Value<int?> agentNumberId = const Value.absent(),
   }) => Transaction(
     id: id ?? this.id,
     horodatage: horodatage ?? this.horodatage,
@@ -888,11 +1321,15 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     type: type ?? this.type,
     montant: montant ?? this.montant,
     statut: statut ?? this.statut,
+    nomClient: nomClient.present ? nomClient.value : this.nomClient,
     bonus: bonus ?? this.bonus,
     numeroClient: numeroClient.present ? numeroClient.value : this.numeroClient,
     reference: reference ?? this.reference,
     estSaisieManuelle: estSaisieManuelle ?? this.estSaisieManuelle,
     agentId: agentId ?? this.agentId,
+    agentNumberId: agentNumberId.present
+        ? agentNumberId.value
+        : this.agentNumberId,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
     return Transaction(
@@ -904,6 +1341,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       type: data.type.present ? data.type.value : this.type,
       montant: data.montant.present ? data.montant.value : this.montant,
       statut: data.statut.present ? data.statut.value : this.statut,
+      nomClient: data.nomClient.present ? data.nomClient.value : this.nomClient,
       bonus: data.bonus.present ? data.bonus.value : this.bonus,
       numeroClient: data.numeroClient.present
           ? data.numeroClient.value
@@ -913,6 +1351,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? data.estSaisieManuelle.value
           : this.estSaisieManuelle,
       agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      agentNumberId: data.agentNumberId.present
+          ? data.agentNumberId.value
+          : this.agentNumberId,
     );
   }
 
@@ -925,11 +1366,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('type: $type, ')
           ..write('montant: $montant, ')
           ..write('statut: $statut, ')
+          ..write('nomClient: $nomClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
           ..write('reference: $reference, ')
           ..write('estSaisieManuelle: $estSaisieManuelle, ')
-          ..write('agentId: $agentId')
+          ..write('agentId: $agentId, ')
+          ..write('agentNumberId: $agentNumberId')
           ..write(')'))
         .toString();
   }
@@ -942,11 +1385,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     type,
     montant,
     statut,
+    nomClient,
     bonus,
     numeroClient,
     reference,
     estSaisieManuelle,
     agentId,
+    agentNumberId,
   );
   @override
   bool operator ==(Object other) =>
@@ -958,11 +1403,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.type == this.type &&
           other.montant == this.montant &&
           other.statut == this.statut &&
+          other.nomClient == this.nomClient &&
           other.bonus == this.bonus &&
           other.numeroClient == this.numeroClient &&
           other.reference == this.reference &&
           other.estSaisieManuelle == this.estSaisieManuelle &&
-          other.agentId == this.agentId);
+          other.agentId == this.agentId &&
+          other.agentNumberId == this.agentNumberId);
 }
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
@@ -972,11 +1419,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<TransactionType> type;
   final Value<double> montant;
   final Value<TransactionStatus> statut;
+  final Value<String?> nomClient;
   final Value<double> bonus;
   final Value<String?> numeroClient;
   final Value<String> reference;
   final Value<bool> estSaisieManuelle;
   final Value<int> agentId;
+  final Value<int?> agentNumberId;
   const TransactionsCompanion({
     this.id = const Value.absent(),
     this.horodatage = const Value.absent(),
@@ -984,11 +1433,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.type = const Value.absent(),
     this.montant = const Value.absent(),
     this.statut = const Value.absent(),
+    this.nomClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
     this.reference = const Value.absent(),
     this.estSaisieManuelle = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.agentNumberId = const Value.absent(),
   });
   TransactionsCompanion.insert({
     this.id = const Value.absent(),
@@ -997,11 +1448,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required TransactionType type,
     required double montant,
     this.statut = const Value.absent(),
+    this.nomClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
     required String reference,
     this.estSaisieManuelle = const Value.absent(),
     required int agentId,
+    this.agentNumberId = const Value.absent(),
   }) : operateur = Value(operateur),
        type = Value(type),
        montant = Value(montant),
@@ -1014,11 +1467,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? type,
     Expression<double>? montant,
     Expression<int>? statut,
+    Expression<String>? nomClient,
     Expression<double>? bonus,
     Expression<String>? numeroClient,
     Expression<String>? reference,
     Expression<bool>? estSaisieManuelle,
     Expression<int>? agentId,
+    Expression<int>? agentNumberId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1027,11 +1482,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (type != null) 'type': type,
       if (montant != null) 'montant': montant,
       if (statut != null) 'statut': statut,
+      if (nomClient != null) 'nom_client': nomClient,
       if (bonus != null) 'bonus': bonus,
       if (numeroClient != null) 'numero_client': numeroClient,
       if (reference != null) 'reference': reference,
       if (estSaisieManuelle != null) 'est_saisie_manuelle': estSaisieManuelle,
       if (agentId != null) 'agent_id': agentId,
+      if (agentNumberId != null) 'agent_number_id': agentNumberId,
     });
   }
 
@@ -1042,11 +1499,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<TransactionType>? type,
     Value<double>? montant,
     Value<TransactionStatus>? statut,
+    Value<String?>? nomClient,
     Value<double>? bonus,
     Value<String?>? numeroClient,
     Value<String>? reference,
     Value<bool>? estSaisieManuelle,
     Value<int>? agentId,
+    Value<int?>? agentNumberId,
   }) {
     return TransactionsCompanion(
       id: id ?? this.id,
@@ -1055,11 +1514,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       type: type ?? this.type,
       montant: montant ?? this.montant,
       statut: statut ?? this.statut,
+      nomClient: nomClient ?? this.nomClient,
       bonus: bonus ?? this.bonus,
       numeroClient: numeroClient ?? this.numeroClient,
       reference: reference ?? this.reference,
       estSaisieManuelle: estSaisieManuelle ?? this.estSaisieManuelle,
       agentId: agentId ?? this.agentId,
+      agentNumberId: agentNumberId ?? this.agentNumberId,
     );
   }
 
@@ -1090,6 +1551,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
         $TransactionsTable.$converterstatut.toSql(statut.value),
       );
     }
+    if (nomClient.present) {
+      map['nom_client'] = Variable<String>(nomClient.value);
+    }
     if (bonus.present) {
       map['bonus'] = Variable<double>(bonus.value);
     }
@@ -1105,6 +1569,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (agentId.present) {
       map['agent_id'] = Variable<int>(agentId.value);
     }
+    if (agentNumberId.present) {
+      map['agent_number_id'] = Variable<int>(agentNumberId.value);
+    }
     return map;
   }
 
@@ -1117,11 +1584,13 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('type: $type, ')
           ..write('montant: $montant, ')
           ..write('statut: $statut, ')
+          ..write('nomClient: $nomClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
           ..write('reference: $reference, ')
           ..write('estSaisieManuelle: $estSaisieManuelle, ')
-          ..write('agentId: $agentId')
+          ..write('agentId: $agentId, ')
+          ..write('agentNumberId: $agentNumberId')
           ..write(')'))
         .toString();
   }
@@ -1599,20 +2068,639 @@ class LogActivitiesCompanion extends UpdateCompanion<LogActivity> {
   }
 }
 
+class $SmsReceivedTable extends SmsReceived
+    with TableInfo<$SmsReceivedTable, SmsReceivedData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SmsReceivedTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _rawBodyMeta = const VerificationMeta(
+    'rawBody',
+  );
+  @override
+  late final GeneratedColumn<String> rawBody = GeneratedColumn<String>(
+    'raw_body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderMeta = const VerificationMeta('sender');
+  @override
+  late final GeneratedColumn<String> sender = GeneratedColumn<String>(
+    'sender',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<OperatorType, int> operateur =
+      GeneratedColumn<int>(
+        'operateur',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<OperatorType>($SmsReceivedTable.$converteroperateur);
+  @override
+  late final GeneratedColumnWithTypeConverter<TransactionType, int> type =
+      GeneratedColumn<int>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<TransactionType>($SmsReceivedTable.$convertertype);
+  static const VerificationMeta _montantMeta = const VerificationMeta(
+    'montant',
+  );
+  @override
+  late final GeneratedColumn<double> montant = GeneratedColumn<double>(
+    'montant',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceMeta = const VerificationMeta(
+    'reference',
+  );
+  @override
+  late final GeneratedColumn<String> reference = GeneratedColumn<String>(
+    'reference',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'UNIQUE NOT NULL',
+  );
+  static const VerificationMeta _numeroClientMeta = const VerificationMeta(
+    'numeroClient',
+  );
+  @override
+  late final GeneratedColumn<String> numeroClient = GeneratedColumn<String>(
+    'numero_client',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateReceptionMeta = const VerificationMeta(
+    'dateReception',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateReception =
+      GeneratedColumn<DateTime>(
+        'date_reception',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
+  static const VerificationMeta _estTraiteMeta = const VerificationMeta(
+    'estTraite',
+  );
+  @override
+  late final GeneratedColumn<bool> estTraite = GeneratedColumn<bool>(
+    'est_traite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("est_traite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    rawBody,
+    sender,
+    operateur,
+    type,
+    montant,
+    reference,
+    numeroClient,
+    dateReception,
+    estTraite,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sms_received';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SmsReceivedData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('raw_body')) {
+      context.handle(
+        _rawBodyMeta,
+        rawBody.isAcceptableOrUnknown(data['raw_body']!, _rawBodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rawBodyMeta);
+    }
+    if (data.containsKey('sender')) {
+      context.handle(
+        _senderMeta,
+        sender.isAcceptableOrUnknown(data['sender']!, _senderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_senderMeta);
+    }
+    if (data.containsKey('montant')) {
+      context.handle(
+        _montantMeta,
+        montant.isAcceptableOrUnknown(data['montant']!, _montantMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_montantMeta);
+    }
+    if (data.containsKey('reference')) {
+      context.handle(
+        _referenceMeta,
+        reference.isAcceptableOrUnknown(data['reference']!, _referenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_referenceMeta);
+    }
+    if (data.containsKey('numero_client')) {
+      context.handle(
+        _numeroClientMeta,
+        numeroClient.isAcceptableOrUnknown(
+          data['numero_client']!,
+          _numeroClientMeta,
+        ),
+      );
+    }
+    if (data.containsKey('date_reception')) {
+      context.handle(
+        _dateReceptionMeta,
+        dateReception.isAcceptableOrUnknown(
+          data['date_reception']!,
+          _dateReceptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('est_traite')) {
+      context.handle(
+        _estTraiteMeta,
+        estTraite.isAcceptableOrUnknown(data['est_traite']!, _estTraiteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SmsReceivedData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SmsReceivedData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      rawBody: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_body'],
+      )!,
+      sender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sender'],
+      )!,
+      operateur: $SmsReceivedTable.$converteroperateur.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}operateur'],
+        )!,
+      ),
+      type: $SmsReceivedTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+      montant: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}montant'],
+      )!,
+      reference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference'],
+      )!,
+      numeroClient: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero_client'],
+      ),
+      dateReception: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_reception'],
+      )!,
+      estTraite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}est_traite'],
+      )!,
+    );
+  }
+
+  @override
+  $SmsReceivedTable createAlias(String alias) {
+    return $SmsReceivedTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<OperatorType, int, int> $converteroperateur =
+      const EnumIndexConverter<OperatorType>(OperatorType.values);
+  static JsonTypeConverter2<TransactionType, int, int> $convertertype =
+      const EnumIndexConverter<TransactionType>(TransactionType.values);
+}
+
+class SmsReceivedData extends DataClass implements Insertable<SmsReceivedData> {
+  final int id;
+  final String rawBody;
+  final String sender;
+  final OperatorType operateur;
+  final TransactionType type;
+  final double montant;
+  final String reference;
+  final String? numeroClient;
+  final DateTime dateReception;
+  final bool estTraite;
+  const SmsReceivedData({
+    required this.id,
+    required this.rawBody,
+    required this.sender,
+    required this.operateur,
+    required this.type,
+    required this.montant,
+    required this.reference,
+    this.numeroClient,
+    required this.dateReception,
+    required this.estTraite,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['raw_body'] = Variable<String>(rawBody);
+    map['sender'] = Variable<String>(sender);
+    {
+      map['operateur'] = Variable<int>(
+        $SmsReceivedTable.$converteroperateur.toSql(operateur),
+      );
+    }
+    {
+      map['type'] = Variable<int>($SmsReceivedTable.$convertertype.toSql(type));
+    }
+    map['montant'] = Variable<double>(montant);
+    map['reference'] = Variable<String>(reference);
+    if (!nullToAbsent || numeroClient != null) {
+      map['numero_client'] = Variable<String>(numeroClient);
+    }
+    map['date_reception'] = Variable<DateTime>(dateReception);
+    map['est_traite'] = Variable<bool>(estTraite);
+    return map;
+  }
+
+  SmsReceivedCompanion toCompanion(bool nullToAbsent) {
+    return SmsReceivedCompanion(
+      id: Value(id),
+      rawBody: Value(rawBody),
+      sender: Value(sender),
+      operateur: Value(operateur),
+      type: Value(type),
+      montant: Value(montant),
+      reference: Value(reference),
+      numeroClient: numeroClient == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numeroClient),
+      dateReception: Value(dateReception),
+      estTraite: Value(estTraite),
+    );
+  }
+
+  factory SmsReceivedData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SmsReceivedData(
+      id: serializer.fromJson<int>(json['id']),
+      rawBody: serializer.fromJson<String>(json['rawBody']),
+      sender: serializer.fromJson<String>(json['sender']),
+      operateur: $SmsReceivedTable.$converteroperateur.fromJson(
+        serializer.fromJson<int>(json['operateur']),
+      ),
+      type: $SmsReceivedTable.$convertertype.fromJson(
+        serializer.fromJson<int>(json['type']),
+      ),
+      montant: serializer.fromJson<double>(json['montant']),
+      reference: serializer.fromJson<String>(json['reference']),
+      numeroClient: serializer.fromJson<String?>(json['numeroClient']),
+      dateReception: serializer.fromJson<DateTime>(json['dateReception']),
+      estTraite: serializer.fromJson<bool>(json['estTraite']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'rawBody': serializer.toJson<String>(rawBody),
+      'sender': serializer.toJson<String>(sender),
+      'operateur': serializer.toJson<int>(
+        $SmsReceivedTable.$converteroperateur.toJson(operateur),
+      ),
+      'type': serializer.toJson<int>(
+        $SmsReceivedTable.$convertertype.toJson(type),
+      ),
+      'montant': serializer.toJson<double>(montant),
+      'reference': serializer.toJson<String>(reference),
+      'numeroClient': serializer.toJson<String?>(numeroClient),
+      'dateReception': serializer.toJson<DateTime>(dateReception),
+      'estTraite': serializer.toJson<bool>(estTraite),
+    };
+  }
+
+  SmsReceivedData copyWith({
+    int? id,
+    String? rawBody,
+    String? sender,
+    OperatorType? operateur,
+    TransactionType? type,
+    double? montant,
+    String? reference,
+    Value<String?> numeroClient = const Value.absent(),
+    DateTime? dateReception,
+    bool? estTraite,
+  }) => SmsReceivedData(
+    id: id ?? this.id,
+    rawBody: rawBody ?? this.rawBody,
+    sender: sender ?? this.sender,
+    operateur: operateur ?? this.operateur,
+    type: type ?? this.type,
+    montant: montant ?? this.montant,
+    reference: reference ?? this.reference,
+    numeroClient: numeroClient.present ? numeroClient.value : this.numeroClient,
+    dateReception: dateReception ?? this.dateReception,
+    estTraite: estTraite ?? this.estTraite,
+  );
+  SmsReceivedData copyWithCompanion(SmsReceivedCompanion data) {
+    return SmsReceivedData(
+      id: data.id.present ? data.id.value : this.id,
+      rawBody: data.rawBody.present ? data.rawBody.value : this.rawBody,
+      sender: data.sender.present ? data.sender.value : this.sender,
+      operateur: data.operateur.present ? data.operateur.value : this.operateur,
+      type: data.type.present ? data.type.value : this.type,
+      montant: data.montant.present ? data.montant.value : this.montant,
+      reference: data.reference.present ? data.reference.value : this.reference,
+      numeroClient: data.numeroClient.present
+          ? data.numeroClient.value
+          : this.numeroClient,
+      dateReception: data.dateReception.present
+          ? data.dateReception.value
+          : this.dateReception,
+      estTraite: data.estTraite.present ? data.estTraite.value : this.estTraite,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmsReceivedData(')
+          ..write('id: $id, ')
+          ..write('rawBody: $rawBody, ')
+          ..write('sender: $sender, ')
+          ..write('operateur: $operateur, ')
+          ..write('type: $type, ')
+          ..write('montant: $montant, ')
+          ..write('reference: $reference, ')
+          ..write('numeroClient: $numeroClient, ')
+          ..write('dateReception: $dateReception, ')
+          ..write('estTraite: $estTraite')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    rawBody,
+    sender,
+    operateur,
+    type,
+    montant,
+    reference,
+    numeroClient,
+    dateReception,
+    estTraite,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SmsReceivedData &&
+          other.id == this.id &&
+          other.rawBody == this.rawBody &&
+          other.sender == this.sender &&
+          other.operateur == this.operateur &&
+          other.type == this.type &&
+          other.montant == this.montant &&
+          other.reference == this.reference &&
+          other.numeroClient == this.numeroClient &&
+          other.dateReception == this.dateReception &&
+          other.estTraite == this.estTraite);
+}
+
+class SmsReceivedCompanion extends UpdateCompanion<SmsReceivedData> {
+  final Value<int> id;
+  final Value<String> rawBody;
+  final Value<String> sender;
+  final Value<OperatorType> operateur;
+  final Value<TransactionType> type;
+  final Value<double> montant;
+  final Value<String> reference;
+  final Value<String?> numeroClient;
+  final Value<DateTime> dateReception;
+  final Value<bool> estTraite;
+  const SmsReceivedCompanion({
+    this.id = const Value.absent(),
+    this.rawBody = const Value.absent(),
+    this.sender = const Value.absent(),
+    this.operateur = const Value.absent(),
+    this.type = const Value.absent(),
+    this.montant = const Value.absent(),
+    this.reference = const Value.absent(),
+    this.numeroClient = const Value.absent(),
+    this.dateReception = const Value.absent(),
+    this.estTraite = const Value.absent(),
+  });
+  SmsReceivedCompanion.insert({
+    this.id = const Value.absent(),
+    required String rawBody,
+    required String sender,
+    required OperatorType operateur,
+    required TransactionType type,
+    required double montant,
+    required String reference,
+    this.numeroClient = const Value.absent(),
+    this.dateReception = const Value.absent(),
+    this.estTraite = const Value.absent(),
+  }) : rawBody = Value(rawBody),
+       sender = Value(sender),
+       operateur = Value(operateur),
+       type = Value(type),
+       montant = Value(montant),
+       reference = Value(reference);
+  static Insertable<SmsReceivedData> custom({
+    Expression<int>? id,
+    Expression<String>? rawBody,
+    Expression<String>? sender,
+    Expression<int>? operateur,
+    Expression<int>? type,
+    Expression<double>? montant,
+    Expression<String>? reference,
+    Expression<String>? numeroClient,
+    Expression<DateTime>? dateReception,
+    Expression<bool>? estTraite,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (rawBody != null) 'raw_body': rawBody,
+      if (sender != null) 'sender': sender,
+      if (operateur != null) 'operateur': operateur,
+      if (type != null) 'type': type,
+      if (montant != null) 'montant': montant,
+      if (reference != null) 'reference': reference,
+      if (numeroClient != null) 'numero_client': numeroClient,
+      if (dateReception != null) 'date_reception': dateReception,
+      if (estTraite != null) 'est_traite': estTraite,
+    });
+  }
+
+  SmsReceivedCompanion copyWith({
+    Value<int>? id,
+    Value<String>? rawBody,
+    Value<String>? sender,
+    Value<OperatorType>? operateur,
+    Value<TransactionType>? type,
+    Value<double>? montant,
+    Value<String>? reference,
+    Value<String?>? numeroClient,
+    Value<DateTime>? dateReception,
+    Value<bool>? estTraite,
+  }) {
+    return SmsReceivedCompanion(
+      id: id ?? this.id,
+      rawBody: rawBody ?? this.rawBody,
+      sender: sender ?? this.sender,
+      operateur: operateur ?? this.operateur,
+      type: type ?? this.type,
+      montant: montant ?? this.montant,
+      reference: reference ?? this.reference,
+      numeroClient: numeroClient ?? this.numeroClient,
+      dateReception: dateReception ?? this.dateReception,
+      estTraite: estTraite ?? this.estTraite,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (rawBody.present) {
+      map['raw_body'] = Variable<String>(rawBody.value);
+    }
+    if (sender.present) {
+      map['sender'] = Variable<String>(sender.value);
+    }
+    if (operateur.present) {
+      map['operateur'] = Variable<int>(
+        $SmsReceivedTable.$converteroperateur.toSql(operateur.value),
+      );
+    }
+    if (type.present) {
+      map['type'] = Variable<int>(
+        $SmsReceivedTable.$convertertype.toSql(type.value),
+      );
+    }
+    if (montant.present) {
+      map['montant'] = Variable<double>(montant.value);
+    }
+    if (reference.present) {
+      map['reference'] = Variable<String>(reference.value);
+    }
+    if (numeroClient.present) {
+      map['numero_client'] = Variable<String>(numeroClient.value);
+    }
+    if (dateReception.present) {
+      map['date_reception'] = Variable<DateTime>(dateReception.value);
+    }
+    if (estTraite.present) {
+      map['est_traite'] = Variable<bool>(estTraite.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmsReceivedCompanion(')
+          ..write('id: $id, ')
+          ..write('rawBody: $rawBody, ')
+          ..write('sender: $sender, ')
+          ..write('operateur: $operateur, ')
+          ..write('type: $type, ')
+          ..write('montant: $montant, ')
+          ..write('reference: $reference, ')
+          ..write('numeroClient: $numeroClient, ')
+          ..write('dateReception: $dateReception, ')
+          ..write('estTraite: $estTraite')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
+  late final $AgentNumbersTable agentNumbers = $AgentNumbersTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $LogActivitiesTable logActivities = $LogActivitiesTable(this);
+  late final $SmsReceivedTable smsReceived = $SmsReceivedTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     profiles,
+    agentNumbers,
     transactions,
     logActivities,
+    smsReceived,
   ];
 }
 
@@ -1655,6 +2743,24 @@ final class $$ProfilesTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$AgentNumbersTable, List<AgentNumber>>
+  _agentNumbersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.agentNumbers,
+    aliasName: $_aliasNameGenerator(db.profiles.id, db.agentNumbers.profileId),
+  );
+
+  $$AgentNumbersTableProcessedTableManager get agentNumbersRefs {
+    final manager = $$AgentNumbersTableTableManager(
+      $_db,
+      $_db.agentNumbers,
+    ).filter((f) => f.profileId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_agentNumbersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -1774,6 +2880,31 @@ class $$ProfilesTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> agentNumbersRefs(
+    Expression<bool> Function($$AgentNumbersTableFilterComposer f) f,
+  ) {
+    final $$AgentNumbersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentNumbers,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentNumbersTableFilterComposer(
+            $db: $db,
+            $table: $db.agentNumbers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> transactionsRefs(
@@ -1967,6 +3098,31 @@ class $$ProfilesTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> agentNumbersRefs<T extends Object>(
+    Expression<T> Function($$AgentNumbersTableAnnotationComposer a) f,
+  ) {
+    final $$AgentNumbersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentNumbers,
+      getReferencedColumn: (t) => t.profileId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentNumbersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentNumbers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> transactionsRefs<T extends Object>(
     Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
   ) {
@@ -2058,6 +3214,7 @@ class $$ProfilesTableTableManager
           Profile,
           PrefetchHooks Function({
             bool adminId,
+            bool agentNumbersRefs,
             bool transactionsRefs,
             bool logsAsAdmin,
             bool logsAsAgent,
@@ -2121,6 +3278,7 @@ class $$ProfilesTableTableManager
           prefetchHooksCallback:
               ({
                 adminId = false,
+                agentNumbersRefs = false,
                 transactionsRefs = false,
                 logsAsAdmin = false,
                 logsAsAgent = false,
@@ -2128,6 +3286,7 @@ class $$ProfilesTableTableManager
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (agentNumbersRefs) db.agentNumbers,
                     if (transactionsRefs) db.transactions,
                     if (logsAsAdmin) db.logActivities,
                     if (logsAsAgent) db.logActivities,
@@ -2166,6 +3325,27 @@ class $$ProfilesTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (agentNumbersRefs)
+                        await $_getPrefetchedData<
+                          Profile,
+                          $ProfilesTable,
+                          AgentNumber
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ProfilesTableReferences
+                              ._agentNumbersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentNumbersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.profileId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (transactionsRefs)
                         await $_getPrefetchedData<
                           Profile,
@@ -2251,10 +3431,425 @@ typedef $$ProfilesTableProcessedTableManager =
       Profile,
       PrefetchHooks Function({
         bool adminId,
+        bool agentNumbersRefs,
         bool transactionsRefs,
         bool logsAsAdmin,
         bool logsAsAgent,
       })
+    >;
+typedef $$AgentNumbersTableCreateCompanionBuilder =
+    AgentNumbersCompanion Function({
+      Value<int> id,
+      required int profileId,
+      required OperatorType operateur,
+      required String numeroPuce,
+      Value<double> soldePuce,
+    });
+typedef $$AgentNumbersTableUpdateCompanionBuilder =
+    AgentNumbersCompanion Function({
+      Value<int> id,
+      Value<int> profileId,
+      Value<OperatorType> operateur,
+      Value<String> numeroPuce,
+      Value<double> soldePuce,
+    });
+
+final class $$AgentNumbersTableReferences
+    extends BaseReferences<_$AppDatabase, $AgentNumbersTable, AgentNumber> {
+  $$AgentNumbersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ProfilesTable _profileIdTable(_$AppDatabase db) =>
+      db.profiles.createAlias(
+        $_aliasNameGenerator(db.agentNumbers.profileId, db.profiles.id),
+      );
+
+  $$ProfilesTableProcessedTableManager get profileId {
+    final $_column = $_itemColumn<int>('profile_id')!;
+
+    final manager = $$ProfilesTableTableManager(
+      $_db,
+      $_db.profiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_profileIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
+  _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transactions,
+    aliasName: $_aliasNameGenerator(
+      db.agentNumbers.id,
+      db.transactions.agentNumberId,
+    ),
+  );
+
+  $$TransactionsTableProcessedTableManager get transactionsRefs {
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.agentNumberId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$AgentNumbersTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentNumbersTable> {
+  $$AgentNumbersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<OperatorType, OperatorType, int>
+  get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get numeroPuce => $composableBuilder(
+    column: $table.numeroPuce,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get soldePuce => $composableBuilder(
+    column: $table.soldePuce,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ProfilesTableFilterComposer get profileId {
+    final $$ProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> transactionsRefs(
+    Expression<bool> Function($$TransactionsTableFilterComposer f) f,
+  ) {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.agentNumberId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AgentNumbersTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentNumbersTable> {
+  $$AgentNumbersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numeroPuce => $composableBuilder(
+    column: $table.numeroPuce,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get soldePuce => $composableBuilder(
+    column: $table.soldePuce,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ProfilesTableOrderingComposer get profileId {
+    final $$ProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentNumbersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentNumbersTable> {
+  $$AgentNumbersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<OperatorType, int> get operateur =>
+      $composableBuilder(column: $table.operateur, builder: (column) => column);
+
+  GeneratedColumn<String> get numeroPuce => $composableBuilder(
+    column: $table.numeroPuce,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get soldePuce =>
+      $composableBuilder(column: $table.soldePuce, builder: (column) => column);
+
+  $$ProfilesTableAnnotationComposer get profileId {
+    final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.profileId,
+      referencedTable: $db.profiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> transactionsRefs<T extends Object>(
+    Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.agentNumberId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AgentNumbersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AgentNumbersTable,
+          AgentNumber,
+          $$AgentNumbersTableFilterComposer,
+          $$AgentNumbersTableOrderingComposer,
+          $$AgentNumbersTableAnnotationComposer,
+          $$AgentNumbersTableCreateCompanionBuilder,
+          $$AgentNumbersTableUpdateCompanionBuilder,
+          (AgentNumber, $$AgentNumbersTableReferences),
+          AgentNumber,
+          PrefetchHooks Function({bool profileId, bool transactionsRefs})
+        > {
+  $$AgentNumbersTableTableManager(_$AppDatabase db, $AgentNumbersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentNumbersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentNumbersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentNumbersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> profileId = const Value.absent(),
+                Value<OperatorType> operateur = const Value.absent(),
+                Value<String> numeroPuce = const Value.absent(),
+                Value<double> soldePuce = const Value.absent(),
+              }) => AgentNumbersCompanion(
+                id: id,
+                profileId: profileId,
+                operateur: operateur,
+                numeroPuce: numeroPuce,
+                soldePuce: soldePuce,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int profileId,
+                required OperatorType operateur,
+                required String numeroPuce,
+                Value<double> soldePuce = const Value.absent(),
+              }) => AgentNumbersCompanion.insert(
+                id: id,
+                profileId: profileId,
+                operateur: operateur,
+                numeroPuce: numeroPuce,
+                soldePuce: soldePuce,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AgentNumbersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({profileId = false, transactionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (transactionsRefs) db.transactions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (profileId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.profileId,
+                                    referencedTable:
+                                        $$AgentNumbersTableReferences
+                                            ._profileIdTable(db),
+                                    referencedColumn:
+                                        $$AgentNumbersTableReferences
+                                            ._profileIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (transactionsRefs)
+                        await $_getPrefetchedData<
+                          AgentNumber,
+                          $AgentNumbersTable,
+                          Transaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AgentNumbersTableReferences
+                              ._transactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AgentNumbersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.agentNumberId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$AgentNumbersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AgentNumbersTable,
+      AgentNumber,
+      $$AgentNumbersTableFilterComposer,
+      $$AgentNumbersTableOrderingComposer,
+      $$AgentNumbersTableAnnotationComposer,
+      $$AgentNumbersTableCreateCompanionBuilder,
+      $$AgentNumbersTableUpdateCompanionBuilder,
+      (AgentNumber, $$AgentNumbersTableReferences),
+      AgentNumber,
+      PrefetchHooks Function({bool profileId, bool transactionsRefs})
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
@@ -2264,11 +3859,13 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       required TransactionType type,
       required double montant,
       Value<TransactionStatus> statut,
+      Value<String?> nomClient,
       Value<double> bonus,
       Value<String?> numeroClient,
       required String reference,
       Value<bool> estSaisieManuelle,
       required int agentId,
+      Value<int?> agentNumberId,
     });
 typedef $$TransactionsTableUpdateCompanionBuilder =
     TransactionsCompanion Function({
@@ -2278,11 +3875,13 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<TransactionType> type,
       Value<double> montant,
       Value<TransactionStatus> statut,
+      Value<String?> nomClient,
       Value<double> bonus,
       Value<String?> numeroClient,
       Value<String> reference,
       Value<bool> estSaisieManuelle,
       Value<int> agentId,
+      Value<int?> agentNumberId,
     });
 
 final class $$TransactionsTableReferences
@@ -2302,6 +3901,25 @@ final class $$TransactionsTableReferences
       $_db.profiles,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_agentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AgentNumbersTable _agentNumberIdTable(_$AppDatabase db) =>
+      db.agentNumbers.createAlias(
+        $_aliasNameGenerator(db.transactions.agentNumberId, db.agentNumbers.id),
+      );
+
+  $$AgentNumbersTableProcessedTableManager? get agentNumberId {
+    final $_column = $_itemColumn<int>('agent_number_id');
+    if ($_column == null) return null;
+    final manager = $$AgentNumbersTableTableManager(
+      $_db,
+      $_db.agentNumbers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_agentNumberIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2351,6 +3969,11 @@ class $$TransactionsTableFilterComposer
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
+  ColumnFilters<String> get nomClient => $composableBuilder(
+    column: $table.nomClient,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get bonus => $composableBuilder(
     column: $table.bonus,
     builder: (column) => ColumnFilters(column),
@@ -2385,6 +4008,29 @@ class $$TransactionsTableFilterComposer
           }) => $$ProfilesTableFilterComposer(
             $db: $db,
             $table: $db.profiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AgentNumbersTableFilterComposer get agentNumberId {
+    final $$AgentNumbersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentNumberId,
+      referencedTable: $db.agentNumbers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentNumbersTableFilterComposer(
+            $db: $db,
+            $table: $db.agentNumbers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2434,6 +4080,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nomClient => $composableBuilder(
+    column: $table.nomClient,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get bonus => $composableBuilder(
     column: $table.bonus,
     builder: (column) => ColumnOrderings(column),
@@ -2476,6 +4127,29 @@ class $$TransactionsTableOrderingComposer
     );
     return composer;
   }
+
+  $$AgentNumbersTableOrderingComposer get agentNumberId {
+    final $$AgentNumbersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentNumberId,
+      referencedTable: $db.agentNumbers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentNumbersTableOrderingComposer(
+            $db: $db,
+            $table: $db.agentNumbers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -2506,6 +4180,9 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<TransactionStatus, int> get statut =>
       $composableBuilder(column: $table.statut, builder: (column) => column);
+
+  GeneratedColumn<String> get nomClient =>
+      $composableBuilder(column: $table.nomClient, builder: (column) => column);
 
   GeneratedColumn<double> get bonus =>
       $composableBuilder(column: $table.bonus, builder: (column) => column);
@@ -2545,6 +4222,29 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$AgentNumbersTableAnnotationComposer get agentNumberId {
+    final $$AgentNumbersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentNumberId,
+      referencedTable: $db.agentNumbers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentNumbersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentNumbers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -2560,7 +4260,7 @@ class $$TransactionsTableTableManager
           $$TransactionsTableUpdateCompanionBuilder,
           (Transaction, $$TransactionsTableReferences),
           Transaction,
-          PrefetchHooks Function({bool agentId})
+          PrefetchHooks Function({bool agentId, bool agentNumberId})
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
     : super(
@@ -2581,11 +4281,13 @@ class $$TransactionsTableTableManager
                 Value<TransactionType> type = const Value.absent(),
                 Value<double> montant = const Value.absent(),
                 Value<TransactionStatus> statut = const Value.absent(),
+                Value<String?> nomClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
                 Value<String> reference = const Value.absent(),
                 Value<bool> estSaisieManuelle = const Value.absent(),
                 Value<int> agentId = const Value.absent(),
+                Value<int?> agentNumberId = const Value.absent(),
               }) => TransactionsCompanion(
                 id: id,
                 horodatage: horodatage,
@@ -2593,11 +4295,13 @@ class $$TransactionsTableTableManager
                 type: type,
                 montant: montant,
                 statut: statut,
+                nomClient: nomClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
                 reference: reference,
                 estSaisieManuelle: estSaisieManuelle,
                 agentId: agentId,
+                agentNumberId: agentNumberId,
               ),
           createCompanionCallback:
               ({
@@ -2607,11 +4311,13 @@ class $$TransactionsTableTableManager
                 required TransactionType type,
                 required double montant,
                 Value<TransactionStatus> statut = const Value.absent(),
+                Value<String?> nomClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
                 required String reference,
                 Value<bool> estSaisieManuelle = const Value.absent(),
                 required int agentId,
+                Value<int?> agentNumberId = const Value.absent(),
               }) => TransactionsCompanion.insert(
                 id: id,
                 horodatage: horodatage,
@@ -2619,11 +4325,13 @@ class $$TransactionsTableTableManager
                 type: type,
                 montant: montant,
                 statut: statut,
+                nomClient: nomClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
                 reference: reference,
                 estSaisieManuelle: estSaisieManuelle,
                 agentId: agentId,
+                agentNumberId: agentNumberId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2633,7 +4341,7 @@ class $$TransactionsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({agentId = false}) {
+          prefetchHooksCallback: ({agentId = false, agentNumberId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -2666,6 +4374,19 @@ class $$TransactionsTableTableManager
                               )
                               as T;
                     }
+                    if (agentNumberId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.agentNumberId,
+                                referencedTable: $$TransactionsTableReferences
+                                    ._agentNumberIdTable(db),
+                                referencedColumn: $$TransactionsTableReferences
+                                    ._agentNumberIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -2690,7 +4411,7 @@ typedef $$TransactionsTableProcessedTableManager =
       $$TransactionsTableUpdateCompanionBuilder,
       (Transaction, $$TransactionsTableReferences),
       Transaction,
-      PrefetchHooks Function({bool agentId})
+      PrefetchHooks Function({bool agentId, bool agentNumberId})
     >;
 typedef $$LogActivitiesTableCreateCompanionBuilder =
     LogActivitiesCompanion Function({
@@ -3141,14 +4862,313 @@ typedef $$LogActivitiesTableProcessedTableManager =
       LogActivity,
       PrefetchHooks Function({bool adminId, bool agentId})
     >;
+typedef $$SmsReceivedTableCreateCompanionBuilder =
+    SmsReceivedCompanion Function({
+      Value<int> id,
+      required String rawBody,
+      required String sender,
+      required OperatorType operateur,
+      required TransactionType type,
+      required double montant,
+      required String reference,
+      Value<String?> numeroClient,
+      Value<DateTime> dateReception,
+      Value<bool> estTraite,
+    });
+typedef $$SmsReceivedTableUpdateCompanionBuilder =
+    SmsReceivedCompanion Function({
+      Value<int> id,
+      Value<String> rawBody,
+      Value<String> sender,
+      Value<OperatorType> operateur,
+      Value<TransactionType> type,
+      Value<double> montant,
+      Value<String> reference,
+      Value<String?> numeroClient,
+      Value<DateTime> dateReception,
+      Value<bool> estTraite,
+    });
+
+class $$SmsReceivedTableFilterComposer
+    extends Composer<_$AppDatabase, $SmsReceivedTable> {
+  $$SmsReceivedTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawBody => $composableBuilder(
+    column: $table.rawBody,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sender => $composableBuilder(
+    column: $table.sender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<OperatorType, OperatorType, int>
+  get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TransactionType, TransactionType, int>
+  get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<double> get montant => $composableBuilder(
+    column: $table.montant,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numeroClient => $composableBuilder(
+    column: $table.numeroClient,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get estTraite => $composableBuilder(
+    column: $table.estTraite,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SmsReceivedTableOrderingComposer
+    extends Composer<_$AppDatabase, $SmsReceivedTable> {
+  $$SmsReceivedTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawBody => $composableBuilder(
+    column: $table.rawBody,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sender => $composableBuilder(
+    column: $table.sender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get montant => $composableBuilder(
+    column: $table.montant,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numeroClient => $composableBuilder(
+    column: $table.numeroClient,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get estTraite => $composableBuilder(
+    column: $table.estTraite,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SmsReceivedTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SmsReceivedTable> {
+  $$SmsReceivedTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get rawBody =>
+      $composableBuilder(column: $table.rawBody, builder: (column) => column);
+
+  GeneratedColumn<String> get sender =>
+      $composableBuilder(column: $table.sender, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<OperatorType, int> get operateur =>
+      $composableBuilder(column: $table.operateur, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TransactionType, int> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<double> get montant =>
+      $composableBuilder(column: $table.montant, builder: (column) => column);
+
+  GeneratedColumn<String> get reference =>
+      $composableBuilder(column: $table.reference, builder: (column) => column);
+
+  GeneratedColumn<String> get numeroClient => $composableBuilder(
+    column: $table.numeroClient,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get estTraite =>
+      $composableBuilder(column: $table.estTraite, builder: (column) => column);
+}
+
+class $$SmsReceivedTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SmsReceivedTable,
+          SmsReceivedData,
+          $$SmsReceivedTableFilterComposer,
+          $$SmsReceivedTableOrderingComposer,
+          $$SmsReceivedTableAnnotationComposer,
+          $$SmsReceivedTableCreateCompanionBuilder,
+          $$SmsReceivedTableUpdateCompanionBuilder,
+          (
+            SmsReceivedData,
+            BaseReferences<_$AppDatabase, $SmsReceivedTable, SmsReceivedData>,
+          ),
+          SmsReceivedData,
+          PrefetchHooks Function()
+        > {
+  $$SmsReceivedTableTableManager(_$AppDatabase db, $SmsReceivedTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SmsReceivedTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SmsReceivedTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SmsReceivedTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> rawBody = const Value.absent(),
+                Value<String> sender = const Value.absent(),
+                Value<OperatorType> operateur = const Value.absent(),
+                Value<TransactionType> type = const Value.absent(),
+                Value<double> montant = const Value.absent(),
+                Value<String> reference = const Value.absent(),
+                Value<String?> numeroClient = const Value.absent(),
+                Value<DateTime> dateReception = const Value.absent(),
+                Value<bool> estTraite = const Value.absent(),
+              }) => SmsReceivedCompanion(
+                id: id,
+                rawBody: rawBody,
+                sender: sender,
+                operateur: operateur,
+                type: type,
+                montant: montant,
+                reference: reference,
+                numeroClient: numeroClient,
+                dateReception: dateReception,
+                estTraite: estTraite,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String rawBody,
+                required String sender,
+                required OperatorType operateur,
+                required TransactionType type,
+                required double montant,
+                required String reference,
+                Value<String?> numeroClient = const Value.absent(),
+                Value<DateTime> dateReception = const Value.absent(),
+                Value<bool> estTraite = const Value.absent(),
+              }) => SmsReceivedCompanion.insert(
+                id: id,
+                rawBody: rawBody,
+                sender: sender,
+                operateur: operateur,
+                type: type,
+                montant: montant,
+                reference: reference,
+                numeroClient: numeroClient,
+                dateReception: dateReception,
+                estTraite: estTraite,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SmsReceivedTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SmsReceivedTable,
+      SmsReceivedData,
+      $$SmsReceivedTableFilterComposer,
+      $$SmsReceivedTableOrderingComposer,
+      $$SmsReceivedTableAnnotationComposer,
+      $$SmsReceivedTableCreateCompanionBuilder,
+      $$SmsReceivedTableUpdateCompanionBuilder,
+      (
+        SmsReceivedData,
+        BaseReferences<_$AppDatabase, $SmsReceivedTable, SmsReceivedData>,
+      ),
+      SmsReceivedData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$ProfilesTableTableManager get profiles =>
       $$ProfilesTableTableManager(_db, _db.profiles);
+  $$AgentNumbersTableTableManager get agentNumbers =>
+      $$AgentNumbersTableTableManager(_db, _db.agentNumbers);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$LogActivitiesTableTableManager get logActivities =>
       $$LogActivitiesTableTableManager(_db, _db.logActivities);
+  $$SmsReceivedTableTableManager get smsReceived =>
+      $$SmsReceivedTableTableManager(_db, _db.smsReceived);
 }

@@ -23,16 +23,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       });
 
       if (_pin.length == 4) {
-        final success = await ref.read(authServiceProvider).login(_pin);
+        // 'user' sera soit un objet Profile, soit null
+        final user = await ref.read(authServiceProvider).login(_pin);
 
-        if (success) {
+        // Au lieu de 'if (success)', on vérifie si l'utilisateur existe
+        if (user != null) {
           if (!mounted) return;
-          // redirection vers la page cible
+
+          // Connexion réussie !
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const MainShell()),
           );
         } else {
-          // Animation d'erreur
+          // Connexion échouée (PIN incorrect)
           setState(() {
             _isError = true;
             _pin = "";
@@ -46,7 +49,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
         }
       }
-    }
+      }
   }
 
   @override
@@ -60,16 +63,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             const Spacer(),
 
             // --- Ton Logo avec Animation ---
-            Image.asset(
-              'assets/icons/icon.png',
-              width: 100,
-              height: 100,
-            )
-            .animate(target: _isError ? 1 : 0)
-            .shake(hz: 4, curve: Curves.easeInOut) // Secoue si erreur
-            .animate()
-            .fadeIn(duration: 600.ms)
-            .scale(delay: 200.ms),
+            Image.asset('assets/icons/Icon.png', width: 100, height: 100)
+                .animate(target: _isError ? 1 : 0)
+                .shake(hz: 4, curve: Curves.easeInOut) // Secoue si erreur
+                .animate()
+                .fadeIn(duration: 600.ms)
+                .scale(delay: 200.ms),
 
             const SizedBox(height: 24),
 
@@ -103,7 +102,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ? theme.primaryColor
                         : theme.primaryColor.withOpacity(0.15),
                     border: Border.all(
-                      color: _isError ? Colors.red : theme.primaryColor.withOpacity(0.3),
+                      color: _isError
+                          ? Colors.red
+                          : theme.primaryColor.withOpacity(0.3),
                       width: 2,
                     ),
                   ),

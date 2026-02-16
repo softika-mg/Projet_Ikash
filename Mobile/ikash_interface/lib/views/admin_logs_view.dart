@@ -1,58 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
+import '../database/app_database.dart';
+import '../core/utils/formatters.dart';
+import '../services/auth_service.dart';
 
-class AdminLogsView extends StatelessWidget {
+class AdminLogsView extends ConsumerWidget {
   const AdminLogsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final db = ref.watch(databaseProvider);
 
     return Scaffold(
-      // Utilisation de la couleur de fond du thème pour le support mode sombre
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Flux d'activités"),
         centerTitle: true,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.filter, size: 20),
-            onPressed: () {}, // Filtre par agent ou par statut
-          ),
-        ],
       ),
-      body: ListView.builder(
-        itemCount: 15,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        itemBuilder: (context, index) {
-          final isError = index == 3 || index == 7;
-          return _buildLogTile(
-            theme: theme,
-            agent: index % 2 == 0 ? "Jean Marc" : "Faly R.",
-            action: index % 3 == 0 ? "Dépôt validé" : "Retrait validé",
-            time: "Il y a ${index + 2} min",
-            status: isError ? "Erreur SMS" : "Succès",
-            message: isError
-                ? "Format SMS inconnu : 'Votre solde est...'"
-                : "Réf: 87819102 | 45.000 Ar",
-            isError: isError,
-            isLast: index == 14, // Pour ne pas afficher la ligne après le dernier élément
+      body: StreamBuilder<List<Transaction>>(
+        // On récupère les 50 dernières transactions pour le flux
+        stream: db.watchAllTransactions(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final transactions = snapshot.data!;
+
+          if (transactions.isEmpty) {
+            return const Center(child: Text("Aucune activité récente"));
+          }
+
+          return ListView.builder(
+            itemCount: transactions.length,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            itemBuilder: (context, index) {
+              final tx = transactions[index];
+
+              // Déduction d'un "état d'erreur" (exemple : bonus nul ou montant suspect)
+              final bool isWarning = tx.bonus == 0 && tx.montant > 0;
+
+              return _buildLogTile(
+                theme: theme,
+                // On affiche l'opérateur comme "Agent/Source"
+                source: tx.operateur.name.toUpperCase(),
+                action: "${tx.type.name.toUpperCase()} validé",
+                time: _formatTimestamp(tx.horodatage),
+                status: isWarning ? "Vérification" : "Succès",
+                message: "Réf: ${tx.reference} | ${CurrencyFormatter.format(tx.montant)}",
+                isWarning: isWarning,
+                isLast: index == transactions.length - 1,
+              );
+            },
           );
         },
       ),
     );
   }
 
+  String _formatTimestamp(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 60) {
+      return "Il y a ${difference.inMinutes} min";
+    } else if (difference.inHours < 24) {
+      return "Il y a ${difference.inHours} h";
+    } else {
+      return DateFormat('dd MMM, HH:mm', 'fr_FR').format(date);
+    }
+  }
+
   Widget _buildLogTile({
     required ThemeData theme,
-    required String agent,
+    required String source,
     required String action,
     required String time,
     required String status,
     required String message,
-    required bool isError,
+    required bool isWarning,
     bool isLast = false,
   }) {
     final isDark = theme.brightness == Brightness.dark;
@@ -62,38 +92,32 @@ class AdminLogsView extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Indicateur visuel (Timeline) ---
+          // --- Timeline ---
           Column(
             children: [
               Container(
                 width: 14,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: isError ? Colors.red : Colors.green,
+                  color: isWarning ? Colors.orange : Colors.green,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: isDark ? theme.scaffoldBackgroundColor : Colors.white,
-                    width: 2
+                    width: 2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isError ? Colors.red : Colors.green).withOpacity(0.3),
-                      blurRadius: 6,
-                    ),
-                  ],
                 ),
               ),
               if (!isLast)
                 Container(
                   width: 2,
-                  height: 80, // Hauteur ajustée pour le contenu
-                  color: isDark ? theme.dividerColor.withOpacity(0.2) : Colors.grey.shade200,
+                  height: 70,
+                  color: theme.dividerColor.withOpacity(0.1),
                 ),
             ],
           ),
           const SizedBox(width: 16),
 
-          // --- Contenu du Log ---
+          // --- Contenu ---
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,17 +126,10 @@ class AdminLogsView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      agent,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      source,
+                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      time,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.hintColor,
-                      ),
-                    ),
+                    Text(time, style: theme.textTheme.bodySmall),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -121,40 +138,24 @@ class AdminLogsView extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isError
-                        ? (isDark ? Colors.redAccent : Colors.red)
-                        : (isDark ? theme.colorScheme.secondary : Colors.black87),
+                    color: isWarning ? Colors.orange : theme.primaryColor,
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // --- Bloc de message (Style Log/Code) ---
                 Container(
                   padding: const EdgeInsets.all(12),
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: isError
-                        ? Colors.red.withOpacity(isDark ? 0.15 : 0.05)
-                        : (isDark ? theme.cardColor : Colors.grey.shade50),
+                    color: isDark ? theme.cardColor : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isError
-                          ? Colors.red.withOpacity(0.2)
-                          : theme.dividerColor.withOpacity(0.05),
-                    ),
+                    border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
                   ),
                   child: Text(
                     message,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      color: isError
-                          ? (isDark ? Colors.red.shade200 : Colors.red.shade800)
-                          : (isDark ? theme.textTheme.bodyMedium?.color?.withOpacity(0.8) : Colors.grey.shade800),
-                    ),
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
-                const SizedBox(height: 20), // Espace entre les logs
+                const SizedBox(height: 20),
               ],
             ),
           ),

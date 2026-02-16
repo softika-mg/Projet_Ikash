@@ -53,7 +53,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 return Transform.scale(
                   scale: value,
                   child: Image.asset(
-                    'assets/icons/icon.png',
+                    'assets/icons/Icon.png',
                     width: 120,
                     height: 120,
                   ),

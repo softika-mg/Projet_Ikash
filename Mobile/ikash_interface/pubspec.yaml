@@ -24,6 +24,7 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   shadcn_ui: ^0.45.2
   shared_preferences: ^2.5.4
+  youtube_player_iframe: ^5.2.2
 
   # State Management
   flutter_riverpod: ^3.2.1
@@ -50,16 +51,27 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   drift_dev: ^2.14.1
   build_runner: ^2.4.7
+  flutter_native_splash: ^2.4.7
 
 flutter:
   uses-material-design: true
   assets:
     - assets/icons/
 
+flutter_native_splash:
+  color: "#6200EE" # Ton violet principal (ou "#000000" pour le dark mode)
+  image: "assets/icons/Icon.png" # Ton logo sans texte
+
+  android_12:
+    image: "assets/icons/Icon.png"
+    color: "#6200EE"
+
+  fullscreen: true
+
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/icon.png"
+  image_path: "assets/icons/Icon.png"
   min_sdk_android: 21 # Doit correspondre à ton build.gradle
   adaptive_icon_background: "#0F172A" # Ta couleur Slate (AppTheme.bgColorDark)
   adaptive_icon_foreground: "assets/icons/icon.png"

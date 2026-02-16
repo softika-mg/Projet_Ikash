@@ -11,8 +11,10 @@ import 'admin_dashboard.dart';
 import 'admin_logs_view.dart';
 import '../providers/theme_provider.dart';
 import 'login_page.dart';
-
-
+import 'profil_view.dart';
+import 'setting_view.dart';
+import 'about_view.dart';
+import 'tutorial_view.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -41,7 +43,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       key: _scaffoldKey,
-      extendBody: true, // Permet au contenu de passer sous la barre flottante
+      extendBody: false, // Permet au contenu de passer sous la barre flottante
       appBar: AppBar(
         leadingWidth: 60,
         leading: Padding(
@@ -52,7 +54,10 @@ class _MainShellState extends ConsumerState<MainShell> {
               backgroundColor: theme.primaryColor.withOpacity(0.1),
               child: Text(
                 user.nom[0].toUpperCase(),
-                style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: theme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -112,7 +117,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           child: SalomonBottomBar(
             currentIndex: _currentIndex,
             onTap: (i) => setState(() => _currentIndex = i),
-            itemPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            itemPadding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 16,
+            ),
             items: isAdmin ? _buildAdminItems(theme) : _buildAgentItems(theme),
           ),
         ),
@@ -128,40 +136,88 @@ class _MainShellState extends ConsumerState<MainShell> {
             decoration: BoxDecoration(color: theme.primaryColor),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
-              child: Text(user.nom[0],
-                style: TextStyle(fontSize: 24, color: theme.primaryColor, fontWeight: FontWeight.bold)),
+              child: Text(
+                user.nom[0],
+                style: TextStyle(
+                  fontSize: 24,
+                  color: theme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            accountName: Text(user.nom, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            accountEmail: Text(user.role == RoleType.admin ? "Administrateur" : "Agent iKash"),
+            accountName: Text(
+              user.nom,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            accountEmail: Text(
+              user.role == RoleType.admin
+                  ? "Administrateur"
+                  : "Solde : ${user.soldeCourant.toStringAsFixed(2)} Ar", // Affichage du solde
+            ),
           ),
+          // --- Section Mon Compte ---
           ListTile(
-            leading: const Icon(LucideIcons.user),
+            leading: const Icon(LucideIcons.user, color: Colors.blue),
             title: const Text("Mon Profil"),
-            onTap: () {},
+            subtitle: const Text("Gérer mes puces et mon solde"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilView()),
+            ),
           ),
+
+          // --- Section Aide & Guide ---
+          ListTile(
+            leading: const Icon(LucideIcons.bookOpen, color: Colors.green),
+            title: const Text("Guide d'utilisation"),
+            subtitle: const Text("Apprendre à utiliser l'application"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TutorialView()),
+            ),
+          ),
+
+          const Divider(), // Une petite ligne de séparation pour la clarté
+          // --- Section Configuration ---
           ListTile(
             leading: const Icon(LucideIcons.settings),
             title: const Text("Paramètres"),
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsView()),
+            ),
+          ),
+
+          // --- Section Informations ---
+          ListTile(
+            leading: const Icon(LucideIcons.helpCircle),
+            title: const Text("À propos"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutView()),
+            ),
           ),
           const Spacer(),
           const Divider(),
           ListTile(
             leading: const Icon(LucideIcons.power, color: Colors.red),
-            title: const Text("Déconnexion", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            title: const Text(
+              "Déconnexion",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
             onTap: () async {
-  Navigator.pop(context); // Ferme le drawer
+              Navigator.pop(context); // Ferme le drawer
 
-  // Maintenant c'est un Future, donc le await est autorisé
-  await ref.read(authServiceProvider).logout();
+              // Maintenant c'est un Future, donc le await est autorisé
+              await ref.read(authServiceProvider).logout();
 
-  if (context.mounted) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
-  }
-},
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            },
           ),
           const SizedBox(height: 20),
         ],

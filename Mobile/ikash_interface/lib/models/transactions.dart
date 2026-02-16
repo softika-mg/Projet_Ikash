@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'profiles.dart';
 import 'enum.dart';
+import 'agent_numbers.dart';
 
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -12,6 +13,7 @@ class Transactions extends Table {
   IntColumn get statut => intEnum<TransactionStatus>().withDefault(
     Constant(TransactionStatus.reussi.index),
   )();
+  TextColumn get nomClient => text().nullable()();
 
   RealColumn get bonus => real().withDefault(const Constant(0.0))();
   TextColumn get numeroClient => text().nullable()();
@@ -22,4 +24,6 @@ class Transactions extends Table {
 
   // La clé étrangère vers l'agent
   IntColumn get agentId => integer().references(Profiles, #id)();
+  IntColumn get agentNumberId =>
+      integer().nullable().references(AgentNumbers, #id)();
 }

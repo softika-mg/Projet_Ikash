@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'package:flex_color_scheme/flex_color_scheme.dart';
-//import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart'; // Pour les SMS
+
 import 'core/app_theme.dart';
 import 'providers/theme_provider.dart';
-import 'database/app_database.dart';
 import 'services/auth_service.dart';
-//import 'views/login_page.dart';
-//import 'views/main_shell.dart';
 import 'views/splash_screen.dart';
 
-
-
 void main() async {
+  // Indispensable pour initialiser les plugins natifs (SQLite, SMS)
   WidgetsFlutterBinding.ensureInitialized();
 
-  final database = AppDatabase();
+  // 1. Créer le container unique pour accéder aux services avant le runApp
   final container = ProviderContainer();
 
-  // On crée le service. Note : On peut passer 'container'
-  // car ProviderContainer implémente l'interface de lecture (ProviderReader)
-  final authService = AuthService(database, container);
+  try {
+    // 2. Initialiser la base de données (Création des comptes Admin/Agent par défaut)
+    final authService = container.read(authServiceProvider);
+    await authService.seedDatabase();
 
-  await authService.seedDatabase();
+    // 3. (Optionnel mais recommandé) Demander la permission SMS dès le début
+    // Tu peux aussi le faire plus tard dans l'AgentHome
+    await Permission.sms.request();
+  } catch (e) {
+    debugPrint("Erreur lors de l'initialisation : $e");
+  }
 
   runApp(
+    // On utilise UncontrolledProviderScope car on a déjà créé notre container
     UncontrolledProviderScope(container: container, child: const IkashApp()),
   );
 }
@@ -34,21 +37,21 @@ class IkashApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // On écoute le provider moderne (Notifier) que l'on a créé
+    // On écoute les changements de thème et d'utilisateur
     final isDarkMode = ref.watch(themeProvider);
-    final currentUser = ref.watch(currentUserProvider);
 
+    // On utilise ShadcnApp (qui enveloppe MaterialApp) pour profiter
+    // des composants Shadcn comme les Toasts ou les Tooltips.
     return MaterialApp(
       title: 'iKash',
       debugShowCheckedModeBanner: false,
 
-      // Utilisation des thèmes FlexScheme
+      // Configuration du thème via ton AppTheme
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-
-      // Basculement dynamique
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
 
+      // La page de démarrage qui décidera du chemin (Login ou Home)
       home: const SplashScreen(),
     );
   }
