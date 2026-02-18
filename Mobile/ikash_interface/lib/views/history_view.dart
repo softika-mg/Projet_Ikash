@@ -8,8 +8,6 @@ import '../models/enum.dart';
 import '../core/utils/formatters.dart'; // Import de l'utilitaire
 import '../services/auth_service.dart';
 
-
-
 class HistoryView extends ConsumerStatefulWidget {
   const HistoryView({super.key});
 
@@ -32,8 +30,10 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
         title: const Text("Historique"),
         actions: [
           IconButton(
-            icon: Icon(LucideIcons.calendar,
-              color: _selectedDateRange != null ? theme.primaryColor : null),
+            icon: Icon(
+              LucideIcons.calendar,
+              color: _selectedDateRange != null ? theme.primaryColor : null,
+            ),
             onPressed: () => _selectDateRange(context),
           ),
           if (_selectedDateRange != null)
@@ -59,7 +59,11 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(LucideIcons.searchX, size: 50, color: theme.hintColor),
+                        Icon(
+                          LucideIcons.searchX,
+                          size: 50,
+                          color: theme.hintColor,
+                        ),
                         const SizedBox(height: 10),
                         const Text("Aucune transaction trouvée"),
                       ],
@@ -96,7 +100,11 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -107,7 +115,9 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
               hintText: "Référence ou numéro client...",
               prefixIcon: const Icon(LucideIcons.search, size: 20),
               filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(
+                0.3,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -119,7 +129,12 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                "Tous", "TELMA", "ORANGE", "AIRTEL", "DEPOT", "RETRAIT",
+                "Tous",
+                "TELMA",
+                "ORANGE",
+                "AIRTEL",
+                "DEPOT",
+                "RETRAIT",
               ].map((label) => _buildFilterChip(label, theme)).toList(),
             ),
           ),
@@ -130,7 +145,11 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
 
   // --- DÉTAILS DE LA TRANSACTION ---
 
-  void _showTransactionDetails(BuildContext context, ThemeData theme, Transaction tx) async {
+  void _showTransactionDetails(
+    BuildContext context,
+    ThemeData theme,
+    Transaction tx,
+  ) async {
     final db = ref.read(databaseProvider);
     final allPuces = await db.select(db.agentNumbers).get();
 
@@ -165,11 +184,17 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
               "Montant Brut",
               CurrencyFormatter.format(tx.montant),
               theme,
-              color: tx.type == TransactionType.retrait ? Colors.green : Colors.red,
-              isBold: true
+              color: tx.type == TransactionType.retrait
+                  ? Colors.green
+                  : Colors.red,
+              isBold: true,
             ),
             if (tx.bonus != null && tx.bonus! > 0)
-              _buildDetailRow("Frais/Bonus", CurrencyFormatter.format(tx.bonus!), theme),
+              _buildDetailRow(
+                "Frais/Bonus",
+                CurrencyFormatter.format(tx.bonus!),
+                theme,
+              ),
             _buildDetailRow(
               "Date & Heure",
               DateFormat('dd/MM/yyyy à HH:mm').format(tx.horodatage),
@@ -178,7 +203,10 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("FERMER")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("FERMER"),
+          ),
         ],
       ),
     );
@@ -212,13 +240,21 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  (tx.nomClient != null && tx.nomClient!.isNotEmpty) ? tx.nomClient! : "Réf: ${tx.reference}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  (tx.nomClient != null && tx.nomClient!.isNotEmpty)
+                      ? tx.nomClient!
+                      : "Réf: ${tx.reference}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   DateFormat('dd MMM, HH:mm').format(tx.horodatage),
-                  style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.hintColor,
+                  ),
                 ),
               ],
             ),
@@ -231,12 +267,18 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: isRetrait ? Colors.green.shade700 : Colors.red.shade700,
+                  color: isRetrait
+                      ? Colors.green.shade700
+                      : Colors.red.shade700,
                 ),
               ),
               Text(
                 tx.type.name.toUpperCase(),
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: theme.hintColor),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: theme.hintColor,
+                ),
               ),
             ],
           ),
@@ -256,24 +298,41 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
       ),
       child: Row(
         children: [
-          Icon(LucideIcons.smartphone, size: 16, color: _getOpColor(puce.operateur)),
+          Icon(
+            LucideIcons.smartphone,
+            size: 16,
+            color: _getOpColor(puce.operateur),
+          ),
           const SizedBox(width: 8),
-          Text("${puce.operateur.name.toUpperCase()} (${puce.numeroPuce})",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(
+            "${puce.operateur.name.toUpperCase()} (${puce.numeroPuce})",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, ThemeData theme, {bool isBold = false, Color? color}) {
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: theme.textTheme.bodySmall),
-          Text(value, style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600, color: color)),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -284,7 +343,13 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
-        label: Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : null)),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isSelected ? Colors.white : null,
+          ),
+        ),
         selected: isSelected,
         selectedColor: theme.primaryColor,
         checkmarkColor: Colors.white,
@@ -306,27 +371,37 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
 
   Color _getOpColor(OperatorType type) {
     switch (type) {
-      case OperatorType.telma: return Colors.yellow.shade800;
-      case OperatorType.orange: return Colors.orange.shade700;
-      case OperatorType.airtel: return Colors.red.shade700;
-      default: return Colors.grey;
+      case OperatorType.telma:
+        return Colors.yellow.shade800;
+      case OperatorType.orange:
+        return Colors.orange.shade700;
+      case OperatorType.airtel:
+        return Colors.red.shade700;
+      default:
+        return Colors.grey;
     }
   }
 
   List<Transaction> _applyFilters(List<Transaction> txs) {
     return txs.where((tx) {
-      final matchesSearch = tx.reference.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          tx.reference.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           (tx.numeroClient?.contains(_searchQuery) ?? false) ||
-          (tx.nomClient?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+          (tx.nomClient?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
 
-      bool matchesCategory = _selectedFilter == "Tous" ||
+      bool matchesCategory =
+          _selectedFilter == "Tous" ||
           tx.operateur.name.toUpperCase() == _selectedFilter ||
           tx.type.name.toUpperCase() == _selectedFilter;
 
       bool matchesDate = true;
       if (_selectedDateRange != null) {
-        matchesDate = tx.horodatage.isAfter(_selectedDateRange!.start) &&
-            tx.horodatage.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
+        matchesDate =
+            tx.horodatage.isAfter(_selectedDateRange!.start) &&
+            tx.horodatage.isBefore(
+              _selectedDateRange!.end.add(const Duration(days: 1)),
+            );
       }
       return matchesSearch && matchesCategory && matchesDate;
     }).toList();

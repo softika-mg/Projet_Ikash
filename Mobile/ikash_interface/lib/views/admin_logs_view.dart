@@ -51,7 +51,8 @@ class AdminLogsView extends ConsumerWidget {
                 action: "${tx.type.name.toUpperCase()} validé",
                 time: _formatTimestamp(tx.horodatage),
                 status: isWarning ? "Vérification" : "Succès",
-                message: "Réf: ${tx.reference} | ${CurrencyFormatter.format(tx.montant)}",
+                message:
+                    "Réf: ${tx.reference} | ${CurrencyFormatter.format(tx.montant)}",
                 isWarning: isWarning,
                 isLast: index == transactions.length - 1,
               );
@@ -102,7 +103,9 @@ class AdminLogsView extends ConsumerWidget {
                   color: isWarning ? Colors.orange : Colors.green,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isDark ? theme.scaffoldBackgroundColor : Colors.white,
+                    color: isDark
+                        ? theme.scaffoldBackgroundColor
+                        : Colors.white,
                     width: 2,
                   ),
                 ),
@@ -127,7 +130,9 @@ class AdminLogsView extends ConsumerWidget {
                   children: [
                     Text(
                       source,
-                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(time, style: theme.textTheme.bodySmall),
                   ],
@@ -148,11 +153,16 @@ class AdminLogsView extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isDark ? theme.cardColor : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                    border: Border.all(
+                      color: theme.dividerColor.withOpacity(0.05),
+                    ),
                   ),
                   child: Text(
                     message,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

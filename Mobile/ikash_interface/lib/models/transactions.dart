@@ -15,6 +15,12 @@ class Transactions extends Table {
   )();
   TextColumn get nomClient => text().nullable()();
 
+  RealColumn get fraisOperateur => real().withDefault(const Constant(0.0))();
+
+  // Ce que l'agent demande au client (ex: 1000 Ar)
+  RealColumn get fraisClient => real().withDefault(const Constant(0.0))();
+
+  // Le bénéfice net (Frais Client - Frais Opérateur)
   RealColumn get bonus => real().withDefault(const Constant(0.0))();
   TextColumn get numeroClient => text().nullable()();
   // On ajoute NOT NULL explicitement dans la contrainte

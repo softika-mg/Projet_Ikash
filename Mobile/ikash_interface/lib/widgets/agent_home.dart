@@ -54,7 +54,9 @@ class AgentHome extends ConsumerWidget {
               // --- Header ---
               Text(
                 "Bonjour, ${user?.nom ?? 'Agent'}",
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -72,11 +74,13 @@ class AgentHome extends ConsumerWidget {
                   stream: pucesStream,
                   builder: (context, puceSnapshot) {
                     final puces = puceSnapshot.data ?? [];
-                    if (puces.isEmpty) return const Text("Aucune puce configurée");
+                    if (puces.isEmpty)
+                      return const Text("Aucune puce configurée");
                     return ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: puces.length,
-                      itemBuilder: (context, index) => _buildMiniPuceCard(puces[index], theme),
+                      itemBuilder: (context, index) =>
+                          _buildMiniPuceCard(puces[index], theme),
                     );
                   },
                 ),
@@ -93,7 +97,12 @@ class AgentHome extends ConsumerWidget {
                 icon: LucideIcons.plusCircle,
                 label: "Saisie manuelle",
                 subtitle: "Digitaliser une opération papier",
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddTransactionView())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddTransactionView(),
+                  ),
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -102,17 +111,28 @@ class AgentHome extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Dernières opérations", style: theme.textTheme.titleMedium),
+                  Text(
+                    "Dernières opérations",
+                    style: theme.textTheme.titleMedium,
+                  ),
                   TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryView())),
-                    child: const Text("Voir tout")
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HistoryView(),
+                      ),
+                    ),
+                    child: const Text("Voir tout"),
                   ),
                 ],
               ),
               if (transactions.isEmpty)
                 const Center(child: Text("Aucune transaction aujourd'hui"))
               else
-                ...transactions.take(5).map((tx) => _buildHistoryLine(tx, theme)).toList(),
+                ...transactions
+                    .take(5)
+                    .map((tx) => _buildHistoryLine(tx, theme))
+                    .toList(),
             ],
           ),
         );
@@ -122,7 +142,12 @@ class AgentHome extends ConsumerWidget {
 
   // --- COMPOSANTS ---
 
-  Widget _buildMainBalanceCard(ThemeData theme, double inVal, double outVal, double comm) {
+  Widget _buildMainBalanceCard(
+    ThemeData theme,
+    double inVal,
+    double outVal,
+    double comm,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -138,24 +163,39 @@ class AgentHome extends ConsumerWidget {
             color: theme.primaryColor.withOpacity(0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: Column(
         children: [
-          const Text("Commissions du jour", style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const Text(
+            "Commissions du jour",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
           const SizedBox(height: 5),
           // Utilisation du Formatter ici
           Text(
             CurrencyFormatter.format(comm),
-            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const Divider(color: Colors.white24, height: 35),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildQuickStat(LucideIcons.trendingUp, "Entrées", CurrencyFormatter.format(inVal)),
-              _buildQuickStat(LucideIcons.trendingDown, "Sorties", CurrencyFormatter.format(outVal)),
+              _buildQuickStat(
+                LucideIcons.trendingUp,
+                "Entrées",
+                CurrencyFormatter.format(inVal),
+              ),
+              _buildQuickStat(
+                LucideIcons.trendingDown,
+                "Sorties",
+                CurrencyFormatter.format(outVal),
+              ),
             ],
           ),
         ],
@@ -184,7 +224,11 @@ class AgentHome extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 puce.operateur.name.toUpperCase(),
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ],
           ),
@@ -192,11 +236,15 @@ class AgentHome extends ConsumerWidget {
           // Utilisation du Formatter ici
           Text(
             CurrencyFormatter.format(puce.soldePuce),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           Text(
             puce.numeroPuce,
-            style: TextStyle(fontSize: 10, color: theme.hintColor, fontWeight: FontWeight.w500)
+            style: TextStyle(
+              fontSize: 10,
+              color: theme.hintColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -214,7 +262,7 @@ class AgentHome extends ConsumerWidget {
         child: Icon(
           isRetrait ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight,
           size: 18,
-          color: opColor
+          color: opColor,
         ),
       ),
       title: Text(
@@ -225,7 +273,7 @@ class AgentHome extends ConsumerWidget {
       ),
       subtitle: Text(
         DateFormat('HH:mm').format(tx.horodatage),
-        style: const TextStyle(fontSize: 12)
+        style: const TextStyle(fontSize: 12),
       ),
       trailing: Text(
         "${isRetrait ? '+' : '-'}${CurrencyFormatter.format(tx.montant)}",
@@ -242,10 +290,14 @@ class AgentHome extends ConsumerWidget {
 
   Color _getOpColor(OperatorType type) {
     switch (type) {
-      case OperatorType.telma: return Colors.yellow.shade800;
-      case OperatorType.orange: return Colors.orange.shade700;
-      case OperatorType.airtel: return Colors.red.shade700;
-      default: return Colors.grey;
+      case OperatorType.telma:
+        return Colors.yellow.shade800;
+      case OperatorType.orange:
+        return Colors.orange.shade700;
+      case OperatorType.airtel:
+        return Colors.red.shade700;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -256,16 +308,30 @@ class AgentHome extends ConsumerWidget {
           children: [
             Icon(icon, color: Colors.white70, size: 14),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSyncAction(BuildContext context, WidgetRef ref, AsyncValue<int> pendingSmsAsync) {
+  Widget _buildSyncAction(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<int> pendingSmsAsync,
+  ) {
     return _buildActionButton(
       context: context,
       icon: LucideIcons.refreshCw,
@@ -282,7 +348,10 @@ class AgentHome extends ConsumerWidget {
           await ref.read(smsSyncProvider).fetchAndParseSms();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Synchronisation terminée"), behavior: SnackBarBehavior.floating)
+              const SnackBar(
+                content: Text("Synchronisation terminée"),
+                behavior: SnackBarBehavior.floating,
+              ),
             );
           }
         }
@@ -290,28 +359,36 @@ class AgentHome extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton({required BuildContext context, required IconData icon, required String label, required String subtitle, required VoidCallback onTap, Widget? trailing}) {
-
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required VoidCallback onTap,
+    Widget? trailing,
+  }) {
     return Padding(
-
       padding: const EdgeInsets.only(bottom: 12),
 
       child: ListTile(
-
         onTap: onTap,
 
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
 
-        leading: CircleAvatar(backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1), child: Icon(icon, color: Theme.of(context).primaryColor)),
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          child: Icon(icon, color: Theme.of(context).primaryColor),
+        ),
 
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
 
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
 
         trailing: trailing ?? const Icon(LucideIcons.chevronRight, size: 18),
-
       ),
-
     );
-
-  }}
+  }
+}

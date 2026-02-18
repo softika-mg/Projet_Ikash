@@ -1,5 +1,6 @@
 package com.example.ikash_interface
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity // <--- Import important
 
-class MainActivity : FlutterActivity()
+class MainActivity: FlutterFragmentActivity() { // <--- Change FlutterActivity par FlutterFragmentActivity
+}

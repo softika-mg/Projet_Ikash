@@ -25,6 +25,9 @@ dependencies:
   shadcn_ui: ^0.45.2
   shared_preferences: ^2.5.4
   youtube_player_iframe: ^5.2.2
+  share_plus: ^10.1.0  # Pour envoyer la sauvegarde par WhatsApp/Email
+  file_picker: ^8.1.0  # Pour sélectionner le fichier à importer
+  local_auth: ^2.3.0
 
   # State Management
   flutter_riverpod: ^3.2.1

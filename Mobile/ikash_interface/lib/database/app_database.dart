@@ -4,25 +4,33 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-// Import de tes modèles
+// Import de modèles
 import '../models/enum.dart';
 import '../models/profiles.dart';
 import '../models/transactions.dart';
 import '../models/logactivities.dart';
 import '../models/sms_received.dart';
 import '../models/agent_numbers.dart';
+import '../models/tarif.dart';
 
 // C'est ici que la magie de la génération opère
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Profiles, Transactions, LogActivities, SmsReceived, AgentNumbers],
+  tables: [
+    Profiles,
+    Transactions,
+    LogActivities,
+    Tarifs,
+    SmsReceived,
+    AgentNumbers,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2; // À augmenter si ON modifies tes tables plus tard
+  int get schemaVersion => 3; // À augmenter si ON modifies tes tables plus tard
 
   @override
   MigrationStrategy get migration {
@@ -36,6 +44,10 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(agentNumbers);
           // 2. On ajoute la colonne de liaison dans Transactions
           await m.addColumn(transactions, transactions.agentNumberId);
+        }
+        // <--- MIGRATION POUR LA NOUVELLE TABLE
+        if (from < 3) {
+          await m.createTable(tarifs);
         }
       },
       beforeOpen: (details) async {
@@ -94,10 +106,11 @@ class AppDatabase extends _$AppDatabase {
           ..where((t) => t.operateur.equals(op.index)))
         .getSingleOrNull();
   }
+
   // Dans AppDatabase
-Stream<Profile> watchProfile(int id) {
-  return (select(profiles)..where((t) => t.id.equals(id))).watchSingle();
-}
+  Stream<Profile> watchProfile(int id) {
+    return (select(profiles)..where((t) => t.id.equals(id))).watchSingle();
+  }
 }
 
 // Configuration de l'emplacement du fichier SQLite sur le téléphone

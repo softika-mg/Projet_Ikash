@@ -521,6 +521,15 @@ class $AgentNumbersTable extends AgentNumbers
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+    'color',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -528,6 +537,7 @@ class $AgentNumbersTable extends AgentNumbers
     operateur,
     numeroPuce,
     soldePuce,
+    color,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -566,6 +576,12 @@ class $AgentNumbersTable extends AgentNumbers
         soldePuce.isAcceptableOrUnknown(data['solde_puce']!, _soldePuceMeta),
       );
     }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
     return context;
   }
 
@@ -597,6 +613,10 @@ class $AgentNumbersTable extends AgentNumbers
         DriftSqlType.double,
         data['${effectivePrefix}solde_puce'],
       )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color'],
+      ),
     );
   }
 
@@ -615,12 +635,14 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
   final OperatorType operateur;
   final String numeroPuce;
   final double soldePuce;
+  final String? color;
   const AgentNumber({
     required this.id,
     required this.profileId,
     required this.operateur,
     required this.numeroPuce,
     required this.soldePuce,
+    this.color,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -634,6 +656,9 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
     }
     map['numero_puce'] = Variable<String>(numeroPuce);
     map['solde_puce'] = Variable<double>(soldePuce);
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<String>(color);
+    }
     return map;
   }
 
@@ -644,6 +669,9 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
       operateur: Value(operateur),
       numeroPuce: Value(numeroPuce),
       soldePuce: Value(soldePuce),
+      color: color == null && nullToAbsent
+          ? const Value.absent()
+          : Value(color),
     );
   }
 
@@ -660,6 +688,7 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
       ),
       numeroPuce: serializer.fromJson<String>(json['numeroPuce']),
       soldePuce: serializer.fromJson<double>(json['soldePuce']),
+      color: serializer.fromJson<String?>(json['color']),
     );
   }
   @override
@@ -673,6 +702,7 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
       ),
       'numeroPuce': serializer.toJson<String>(numeroPuce),
       'soldePuce': serializer.toJson<double>(soldePuce),
+      'color': serializer.toJson<String?>(color),
     };
   }
 
@@ -682,12 +712,14 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
     OperatorType? operateur,
     String? numeroPuce,
     double? soldePuce,
+    Value<String?> color = const Value.absent(),
   }) => AgentNumber(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
     operateur: operateur ?? this.operateur,
     numeroPuce: numeroPuce ?? this.numeroPuce,
     soldePuce: soldePuce ?? this.soldePuce,
+    color: color.present ? color.value : this.color,
   );
   AgentNumber copyWithCompanion(AgentNumbersCompanion data) {
     return AgentNumber(
@@ -698,6 +730,7 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
           ? data.numeroPuce.value
           : this.numeroPuce,
       soldePuce: data.soldePuce.present ? data.soldePuce.value : this.soldePuce,
+      color: data.color.present ? data.color.value : this.color,
     );
   }
 
@@ -708,14 +741,15 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
           ..write('profileId: $profileId, ')
           ..write('operateur: $operateur, ')
           ..write('numeroPuce: $numeroPuce, ')
-          ..write('soldePuce: $soldePuce')
+          ..write('soldePuce: $soldePuce, ')
+          ..write('color: $color')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, profileId, operateur, numeroPuce, soldePuce);
+      Object.hash(id, profileId, operateur, numeroPuce, soldePuce, color);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -724,7 +758,8 @@ class AgentNumber extends DataClass implements Insertable<AgentNumber> {
           other.profileId == this.profileId &&
           other.operateur == this.operateur &&
           other.numeroPuce == this.numeroPuce &&
-          other.soldePuce == this.soldePuce);
+          other.soldePuce == this.soldePuce &&
+          other.color == this.color);
 }
 
 class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
@@ -733,12 +768,14 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
   final Value<OperatorType> operateur;
   final Value<String> numeroPuce;
   final Value<double> soldePuce;
+  final Value<String?> color;
   const AgentNumbersCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
     this.operateur = const Value.absent(),
     this.numeroPuce = const Value.absent(),
     this.soldePuce = const Value.absent(),
+    this.color = const Value.absent(),
   });
   AgentNumbersCompanion.insert({
     this.id = const Value.absent(),
@@ -746,6 +783,7 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
     required OperatorType operateur,
     required String numeroPuce,
     this.soldePuce = const Value.absent(),
+    this.color = const Value.absent(),
   }) : profileId = Value(profileId),
        operateur = Value(operateur),
        numeroPuce = Value(numeroPuce);
@@ -755,6 +793,7 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
     Expression<int>? operateur,
     Expression<String>? numeroPuce,
     Expression<double>? soldePuce,
+    Expression<String>? color,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -762,6 +801,7 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
       if (operateur != null) 'operateur': operateur,
       if (numeroPuce != null) 'numero_puce': numeroPuce,
       if (soldePuce != null) 'solde_puce': soldePuce,
+      if (color != null) 'color': color,
     });
   }
 
@@ -771,6 +811,7 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
     Value<OperatorType>? operateur,
     Value<String>? numeroPuce,
     Value<double>? soldePuce,
+    Value<String?>? color,
   }) {
     return AgentNumbersCompanion(
       id: id ?? this.id,
@@ -778,6 +819,7 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
       operateur: operateur ?? this.operateur,
       numeroPuce: numeroPuce ?? this.numeroPuce,
       soldePuce: soldePuce ?? this.soldePuce,
+      color: color ?? this.color,
     );
   }
 
@@ -801,6 +843,9 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
     if (soldePuce.present) {
       map['solde_puce'] = Variable<double>(soldePuce.value);
     }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
     return map;
   }
 
@@ -811,7 +856,8 @@ class AgentNumbersCompanion extends UpdateCompanion<AgentNumber> {
           ..write('profileId: $profileId, ')
           ..write('operateur: $operateur, ')
           ..write('numeroPuce: $numeroPuce, ')
-          ..write('soldePuce: $soldePuce')
+          ..write('soldePuce: $soldePuce, ')
+          ..write('color: $color')
           ..write(')'))
         .toString();
   }
@@ -898,6 +944,30 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fraisOperateurMeta = const VerificationMeta(
+    'fraisOperateur',
+  );
+  @override
+  late final GeneratedColumn<double> fraisOperateur = GeneratedColumn<double>(
+    'frais_operateur',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _fraisClientMeta = const VerificationMeta(
+    'fraisClient',
+  );
+  @override
+  late final GeneratedColumn<double> fraisClient = GeneratedColumn<double>(
+    'frais_client',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _bonusMeta = const VerificationMeta('bonus');
   @override
   late final GeneratedColumn<double> bonus = GeneratedColumn<double>(
@@ -983,6 +1053,8 @@ class $TransactionsTable extends Transactions
     montant,
     statut,
     nomClient,
+    fraisOperateur,
+    fraisClient,
     bonus,
     numeroClient,
     reference,
@@ -1023,6 +1095,24 @@ class $TransactionsTable extends Transactions
       context.handle(
         _nomClientMeta,
         nomClient.isAcceptableOrUnknown(data['nom_client']!, _nomClientMeta),
+      );
+    }
+    if (data.containsKey('frais_operateur')) {
+      context.handle(
+        _fraisOperateurMeta,
+        fraisOperateur.isAcceptableOrUnknown(
+          data['frais_operateur']!,
+          _fraisOperateurMeta,
+        ),
+      );
+    }
+    if (data.containsKey('frais_client')) {
+      context.handle(
+        _fraisClientMeta,
+        fraisClient.isAcceptableOrUnknown(
+          data['frais_client']!,
+          _fraisClientMeta,
+        ),
       );
     }
     if (data.containsKey('bonus')) {
@@ -1117,6 +1207,14 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}nom_client'],
       ),
+      fraisOperateur: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}frais_operateur'],
+      )!,
+      fraisClient: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}frais_client'],
+      )!,
       bonus: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}bonus'],
@@ -1165,6 +1263,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final double montant;
   final TransactionStatus statut;
   final String? nomClient;
+  final double fraisOperateur;
+  final double fraisClient;
   final double bonus;
   final String? numeroClient;
   final String reference;
@@ -1179,6 +1279,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.montant,
     required this.statut,
     this.nomClient,
+    required this.fraisOperateur,
+    required this.fraisClient,
     required this.bonus,
     this.numeroClient,
     required this.reference,
@@ -1210,6 +1312,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || nomClient != null) {
       map['nom_client'] = Variable<String>(nomClient);
     }
+    map['frais_operateur'] = Variable<double>(fraisOperateur);
+    map['frais_client'] = Variable<double>(fraisClient);
     map['bonus'] = Variable<double>(bonus);
     if (!nullToAbsent || numeroClient != null) {
       map['numero_client'] = Variable<String>(numeroClient);
@@ -1234,6 +1338,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       nomClient: nomClient == null && nullToAbsent
           ? const Value.absent()
           : Value(nomClient),
+      fraisOperateur: Value(fraisOperateur),
+      fraisClient: Value(fraisClient),
       bonus: Value(bonus),
       numeroClient: numeroClient == null && nullToAbsent
           ? const Value.absent()
@@ -1266,6 +1372,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         serializer.fromJson<int>(json['statut']),
       ),
       nomClient: serializer.fromJson<String?>(json['nomClient']),
+      fraisOperateur: serializer.fromJson<double>(json['fraisOperateur']),
+      fraisClient: serializer.fromJson<double>(json['fraisClient']),
       bonus: serializer.fromJson<double>(json['bonus']),
       numeroClient: serializer.fromJson<String?>(json['numeroClient']),
       reference: serializer.fromJson<String>(json['reference']),
@@ -1291,6 +1399,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         $TransactionsTable.$converterstatut.toJson(statut),
       ),
       'nomClient': serializer.toJson<String?>(nomClient),
+      'fraisOperateur': serializer.toJson<double>(fraisOperateur),
+      'fraisClient': serializer.toJson<double>(fraisClient),
       'bonus': serializer.toJson<double>(bonus),
       'numeroClient': serializer.toJson<String?>(numeroClient),
       'reference': serializer.toJson<String>(reference),
@@ -1308,6 +1418,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     double? montant,
     TransactionStatus? statut,
     Value<String?> nomClient = const Value.absent(),
+    double? fraisOperateur,
+    double? fraisClient,
     double? bonus,
     Value<String?> numeroClient = const Value.absent(),
     String? reference,
@@ -1322,6 +1434,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     montant: montant ?? this.montant,
     statut: statut ?? this.statut,
     nomClient: nomClient.present ? nomClient.value : this.nomClient,
+    fraisOperateur: fraisOperateur ?? this.fraisOperateur,
+    fraisClient: fraisClient ?? this.fraisClient,
     bonus: bonus ?? this.bonus,
     numeroClient: numeroClient.present ? numeroClient.value : this.numeroClient,
     reference: reference ?? this.reference,
@@ -1342,6 +1456,12 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       montant: data.montant.present ? data.montant.value : this.montant,
       statut: data.statut.present ? data.statut.value : this.statut,
       nomClient: data.nomClient.present ? data.nomClient.value : this.nomClient,
+      fraisOperateur: data.fraisOperateur.present
+          ? data.fraisOperateur.value
+          : this.fraisOperateur,
+      fraisClient: data.fraisClient.present
+          ? data.fraisClient.value
+          : this.fraisClient,
       bonus: data.bonus.present ? data.bonus.value : this.bonus,
       numeroClient: data.numeroClient.present
           ? data.numeroClient.value
@@ -1367,6 +1487,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('montant: $montant, ')
           ..write('statut: $statut, ')
           ..write('nomClient: $nomClient, ')
+          ..write('fraisOperateur: $fraisOperateur, ')
+          ..write('fraisClient: $fraisClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
           ..write('reference: $reference, ')
@@ -1386,6 +1508,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     montant,
     statut,
     nomClient,
+    fraisOperateur,
+    fraisClient,
     bonus,
     numeroClient,
     reference,
@@ -1404,6 +1528,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.montant == this.montant &&
           other.statut == this.statut &&
           other.nomClient == this.nomClient &&
+          other.fraisOperateur == this.fraisOperateur &&
+          other.fraisClient == this.fraisClient &&
           other.bonus == this.bonus &&
           other.numeroClient == this.numeroClient &&
           other.reference == this.reference &&
@@ -1420,6 +1546,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<double> montant;
   final Value<TransactionStatus> statut;
   final Value<String?> nomClient;
+  final Value<double> fraisOperateur;
+  final Value<double> fraisClient;
   final Value<double> bonus;
   final Value<String?> numeroClient;
   final Value<String> reference;
@@ -1434,6 +1562,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.montant = const Value.absent(),
     this.statut = const Value.absent(),
     this.nomClient = const Value.absent(),
+    this.fraisOperateur = const Value.absent(),
+    this.fraisClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
     this.reference = const Value.absent(),
@@ -1449,6 +1579,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required double montant,
     this.statut = const Value.absent(),
     this.nomClient = const Value.absent(),
+    this.fraisOperateur = const Value.absent(),
+    this.fraisClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
     required String reference,
@@ -1468,6 +1600,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<double>? montant,
     Expression<int>? statut,
     Expression<String>? nomClient,
+    Expression<double>? fraisOperateur,
+    Expression<double>? fraisClient,
     Expression<double>? bonus,
     Expression<String>? numeroClient,
     Expression<String>? reference,
@@ -1483,6 +1617,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (montant != null) 'montant': montant,
       if (statut != null) 'statut': statut,
       if (nomClient != null) 'nom_client': nomClient,
+      if (fraisOperateur != null) 'frais_operateur': fraisOperateur,
+      if (fraisClient != null) 'frais_client': fraisClient,
       if (bonus != null) 'bonus': bonus,
       if (numeroClient != null) 'numero_client': numeroClient,
       if (reference != null) 'reference': reference,
@@ -1500,6 +1636,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<double>? montant,
     Value<TransactionStatus>? statut,
     Value<String?>? nomClient,
+    Value<double>? fraisOperateur,
+    Value<double>? fraisClient,
     Value<double>? bonus,
     Value<String?>? numeroClient,
     Value<String>? reference,
@@ -1515,6 +1653,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       montant: montant ?? this.montant,
       statut: statut ?? this.statut,
       nomClient: nomClient ?? this.nomClient,
+      fraisOperateur: fraisOperateur ?? this.fraisOperateur,
+      fraisClient: fraisClient ?? this.fraisClient,
       bonus: bonus ?? this.bonus,
       numeroClient: numeroClient ?? this.numeroClient,
       reference: reference ?? this.reference,
@@ -1554,6 +1694,12 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (nomClient.present) {
       map['nom_client'] = Variable<String>(nomClient.value);
     }
+    if (fraisOperateur.present) {
+      map['frais_operateur'] = Variable<double>(fraisOperateur.value);
+    }
+    if (fraisClient.present) {
+      map['frais_client'] = Variable<double>(fraisClient.value);
+    }
     if (bonus.present) {
       map['bonus'] = Variable<double>(bonus.value);
     }
@@ -1585,6 +1731,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('montant: $montant, ')
           ..write('statut: $statut, ')
           ..write('nomClient: $nomClient, ')
+          ..write('fraisOperateur: $fraisOperateur, ')
+          ..write('fraisClient: $fraisClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
           ..write('reference: $reference, ')
@@ -2063,6 +2211,481 @@ class LogActivitiesCompanion extends UpdateCompanion<LogActivity> {
           ..write('ancienSolde: $ancienSolde, ')
           ..write('nouveauSolde: $nouveauSolde, ')
           ..write('horodatage: $horodatage')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TarifsTable extends Tarifs with TableInfo<$TarifsTable, TarifData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TarifsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<OperatorType, int> operateur =
+      GeneratedColumn<int>(
+        'operateur',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<OperatorType>($TarifsTable.$converteroperateur);
+  static const VerificationMeta _montantMinMeta = const VerificationMeta(
+    'montantMin',
+  );
+  @override
+  late final GeneratedColumn<double> montantMin = GeneratedColumn<double>(
+    'montant_min',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _montantMaxMeta = const VerificationMeta(
+    'montantMax',
+  );
+  @override
+  late final GeneratedColumn<double> montantMax = GeneratedColumn<double>(
+    'montant_max',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fraisOperateurMeta = const VerificationMeta(
+    'fraisOperateur',
+  );
+  @override
+  late final GeneratedColumn<double> fraisOperateur = GeneratedColumn<double>(
+    'frais_operateur',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fraisClientMeta = const VerificationMeta(
+    'fraisClient',
+  );
+  @override
+  late final GeneratedColumn<double> fraisClient = GeneratedColumn<double>(
+    'frais_client',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _derniereMajMeta = const VerificationMeta(
+    'derniereMaj',
+  );
+  @override
+  late final GeneratedColumn<DateTime> derniereMaj = GeneratedColumn<DateTime>(
+    'derniere_maj',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    operateur,
+    montantMin,
+    montantMax,
+    fraisOperateur,
+    fraisClient,
+    derniereMaj,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tarifs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TarifData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('montant_min')) {
+      context.handle(
+        _montantMinMeta,
+        montantMin.isAcceptableOrUnknown(data['montant_min']!, _montantMinMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_montantMinMeta);
+    }
+    if (data.containsKey('montant_max')) {
+      context.handle(
+        _montantMaxMeta,
+        montantMax.isAcceptableOrUnknown(data['montant_max']!, _montantMaxMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_montantMaxMeta);
+    }
+    if (data.containsKey('frais_operateur')) {
+      context.handle(
+        _fraisOperateurMeta,
+        fraisOperateur.isAcceptableOrUnknown(
+          data['frais_operateur']!,
+          _fraisOperateurMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fraisOperateurMeta);
+    }
+    if (data.containsKey('frais_client')) {
+      context.handle(
+        _fraisClientMeta,
+        fraisClient.isAcceptableOrUnknown(
+          data['frais_client']!,
+          _fraisClientMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fraisClientMeta);
+    }
+    if (data.containsKey('derniere_maj')) {
+      context.handle(
+        _derniereMajMeta,
+        derniereMaj.isAcceptableOrUnknown(
+          data['derniere_maj']!,
+          _derniereMajMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TarifData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TarifData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      operateur: $TarifsTable.$converteroperateur.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}operateur'],
+        )!,
+      ),
+      montantMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}montant_min'],
+      )!,
+      montantMax: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}montant_max'],
+      )!,
+      fraisOperateur: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}frais_operateur'],
+      )!,
+      fraisClient: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}frais_client'],
+      )!,
+      derniereMaj: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}derniere_maj'],
+      )!,
+    );
+  }
+
+  @override
+  $TarifsTable createAlias(String alias) {
+    return $TarifsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<OperatorType, int, int> $converteroperateur =
+      const EnumIndexConverter<OperatorType>(OperatorType.values);
+}
+
+class TarifData extends DataClass implements Insertable<TarifData> {
+  final int id;
+  final OperatorType operateur;
+  final double montantMin;
+  final double montantMax;
+  final double fraisOperateur;
+  final double fraisClient;
+  final DateTime derniereMaj;
+  const TarifData({
+    required this.id,
+    required this.operateur,
+    required this.montantMin,
+    required this.montantMax,
+    required this.fraisOperateur,
+    required this.fraisClient,
+    required this.derniereMaj,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    {
+      map['operateur'] = Variable<int>(
+        $TarifsTable.$converteroperateur.toSql(operateur),
+      );
+    }
+    map['montant_min'] = Variable<double>(montantMin);
+    map['montant_max'] = Variable<double>(montantMax);
+    map['frais_operateur'] = Variable<double>(fraisOperateur);
+    map['frais_client'] = Variable<double>(fraisClient);
+    map['derniere_maj'] = Variable<DateTime>(derniereMaj);
+    return map;
+  }
+
+  TarifsCompanion toCompanion(bool nullToAbsent) {
+    return TarifsCompanion(
+      id: Value(id),
+      operateur: Value(operateur),
+      montantMin: Value(montantMin),
+      montantMax: Value(montantMax),
+      fraisOperateur: Value(fraisOperateur),
+      fraisClient: Value(fraisClient),
+      derniereMaj: Value(derniereMaj),
+    );
+  }
+
+  factory TarifData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TarifData(
+      id: serializer.fromJson<int>(json['id']),
+      operateur: $TarifsTable.$converteroperateur.fromJson(
+        serializer.fromJson<int>(json['operateur']),
+      ),
+      montantMin: serializer.fromJson<double>(json['montantMin']),
+      montantMax: serializer.fromJson<double>(json['montantMax']),
+      fraisOperateur: serializer.fromJson<double>(json['fraisOperateur']),
+      fraisClient: serializer.fromJson<double>(json['fraisClient']),
+      derniereMaj: serializer.fromJson<DateTime>(json['derniereMaj']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'operateur': serializer.toJson<int>(
+        $TarifsTable.$converteroperateur.toJson(operateur),
+      ),
+      'montantMin': serializer.toJson<double>(montantMin),
+      'montantMax': serializer.toJson<double>(montantMax),
+      'fraisOperateur': serializer.toJson<double>(fraisOperateur),
+      'fraisClient': serializer.toJson<double>(fraisClient),
+      'derniereMaj': serializer.toJson<DateTime>(derniereMaj),
+    };
+  }
+
+  TarifData copyWith({
+    int? id,
+    OperatorType? operateur,
+    double? montantMin,
+    double? montantMax,
+    double? fraisOperateur,
+    double? fraisClient,
+    DateTime? derniereMaj,
+  }) => TarifData(
+    id: id ?? this.id,
+    operateur: operateur ?? this.operateur,
+    montantMin: montantMin ?? this.montantMin,
+    montantMax: montantMax ?? this.montantMax,
+    fraisOperateur: fraisOperateur ?? this.fraisOperateur,
+    fraisClient: fraisClient ?? this.fraisClient,
+    derniereMaj: derniereMaj ?? this.derniereMaj,
+  );
+  TarifData copyWithCompanion(TarifsCompanion data) {
+    return TarifData(
+      id: data.id.present ? data.id.value : this.id,
+      operateur: data.operateur.present ? data.operateur.value : this.operateur,
+      montantMin: data.montantMin.present
+          ? data.montantMin.value
+          : this.montantMin,
+      montantMax: data.montantMax.present
+          ? data.montantMax.value
+          : this.montantMax,
+      fraisOperateur: data.fraisOperateur.present
+          ? data.fraisOperateur.value
+          : this.fraisOperateur,
+      fraisClient: data.fraisClient.present
+          ? data.fraisClient.value
+          : this.fraisClient,
+      derniereMaj: data.derniereMaj.present
+          ? data.derniereMaj.value
+          : this.derniereMaj,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TarifData(')
+          ..write('id: $id, ')
+          ..write('operateur: $operateur, ')
+          ..write('montantMin: $montantMin, ')
+          ..write('montantMax: $montantMax, ')
+          ..write('fraisOperateur: $fraisOperateur, ')
+          ..write('fraisClient: $fraisClient, ')
+          ..write('derniereMaj: $derniereMaj')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    operateur,
+    montantMin,
+    montantMax,
+    fraisOperateur,
+    fraisClient,
+    derniereMaj,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TarifData &&
+          other.id == this.id &&
+          other.operateur == this.operateur &&
+          other.montantMin == this.montantMin &&
+          other.montantMax == this.montantMax &&
+          other.fraisOperateur == this.fraisOperateur &&
+          other.fraisClient == this.fraisClient &&
+          other.derniereMaj == this.derniereMaj);
+}
+
+class TarifsCompanion extends UpdateCompanion<TarifData> {
+  final Value<int> id;
+  final Value<OperatorType> operateur;
+  final Value<double> montantMin;
+  final Value<double> montantMax;
+  final Value<double> fraisOperateur;
+  final Value<double> fraisClient;
+  final Value<DateTime> derniereMaj;
+  const TarifsCompanion({
+    this.id = const Value.absent(),
+    this.operateur = const Value.absent(),
+    this.montantMin = const Value.absent(),
+    this.montantMax = const Value.absent(),
+    this.fraisOperateur = const Value.absent(),
+    this.fraisClient = const Value.absent(),
+    this.derniereMaj = const Value.absent(),
+  });
+  TarifsCompanion.insert({
+    this.id = const Value.absent(),
+    required OperatorType operateur,
+    required double montantMin,
+    required double montantMax,
+    required double fraisOperateur,
+    required double fraisClient,
+    this.derniereMaj = const Value.absent(),
+  }) : operateur = Value(operateur),
+       montantMin = Value(montantMin),
+       montantMax = Value(montantMax),
+       fraisOperateur = Value(fraisOperateur),
+       fraisClient = Value(fraisClient);
+  static Insertable<TarifData> custom({
+    Expression<int>? id,
+    Expression<int>? operateur,
+    Expression<double>? montantMin,
+    Expression<double>? montantMax,
+    Expression<double>? fraisOperateur,
+    Expression<double>? fraisClient,
+    Expression<DateTime>? derniereMaj,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (operateur != null) 'operateur': operateur,
+      if (montantMin != null) 'montant_min': montantMin,
+      if (montantMax != null) 'montant_max': montantMax,
+      if (fraisOperateur != null) 'frais_operateur': fraisOperateur,
+      if (fraisClient != null) 'frais_client': fraisClient,
+      if (derniereMaj != null) 'derniere_maj': derniereMaj,
+    });
+  }
+
+  TarifsCompanion copyWith({
+    Value<int>? id,
+    Value<OperatorType>? operateur,
+    Value<double>? montantMin,
+    Value<double>? montantMax,
+    Value<double>? fraisOperateur,
+    Value<double>? fraisClient,
+    Value<DateTime>? derniereMaj,
+  }) {
+    return TarifsCompanion(
+      id: id ?? this.id,
+      operateur: operateur ?? this.operateur,
+      montantMin: montantMin ?? this.montantMin,
+      montantMax: montantMax ?? this.montantMax,
+      fraisOperateur: fraisOperateur ?? this.fraisOperateur,
+      fraisClient: fraisClient ?? this.fraisClient,
+      derniereMaj: derniereMaj ?? this.derniereMaj,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (operateur.present) {
+      map['operateur'] = Variable<int>(
+        $TarifsTable.$converteroperateur.toSql(operateur.value),
+      );
+    }
+    if (montantMin.present) {
+      map['montant_min'] = Variable<double>(montantMin.value);
+    }
+    if (montantMax.present) {
+      map['montant_max'] = Variable<double>(montantMax.value);
+    }
+    if (fraisOperateur.present) {
+      map['frais_operateur'] = Variable<double>(fraisOperateur.value);
+    }
+    if (fraisClient.present) {
+      map['frais_client'] = Variable<double>(fraisClient.value);
+    }
+    if (derniereMaj.present) {
+      map['derniere_maj'] = Variable<DateTime>(derniereMaj.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TarifsCompanion(')
+          ..write('id: $id, ')
+          ..write('operateur: $operateur, ')
+          ..write('montantMin: $montantMin, ')
+          ..write('montantMax: $montantMax, ')
+          ..write('fraisOperateur: $fraisOperateur, ')
+          ..write('fraisClient: $fraisClient, ')
+          ..write('derniereMaj: $derniereMaj')
           ..write(')'))
         .toString();
   }
@@ -2690,6 +3313,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AgentNumbersTable agentNumbers = $AgentNumbersTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $LogActivitiesTable logActivities = $LogActivitiesTable(this);
+  late final $TarifsTable tarifs = $TarifsTable(this);
   late final $SmsReceivedTable smsReceived = $SmsReceivedTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -2700,6 +3324,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     agentNumbers,
     transactions,
     logActivities,
+    tarifs,
     smsReceived,
   ];
 }
@@ -3444,6 +4069,7 @@ typedef $$AgentNumbersTableCreateCompanionBuilder =
       required OperatorType operateur,
       required String numeroPuce,
       Value<double> soldePuce,
+      Value<String?> color,
     });
 typedef $$AgentNumbersTableUpdateCompanionBuilder =
     AgentNumbersCompanion Function({
@@ -3452,6 +4078,7 @@ typedef $$AgentNumbersTableUpdateCompanionBuilder =
       Value<OperatorType> operateur,
       Value<String> numeroPuce,
       Value<double> soldePuce,
+      Value<String?> color,
     });
 
 final class $$AgentNumbersTableReferences
@@ -3526,6 +4153,11 @@ class $$AgentNumbersTableFilterComposer
 
   ColumnFilters<double> get soldePuce => $composableBuilder(
     column: $table.soldePuce,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get color => $composableBuilder(
+    column: $table.color,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3607,6 +4239,11 @@ class $$AgentNumbersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProfilesTableOrderingComposer get profileId {
     final $$ProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3653,6 +4290,9 @@ class $$AgentNumbersTableAnnotationComposer
 
   GeneratedColumn<double> get soldePuce =>
       $composableBuilder(column: $table.soldePuce, builder: (column) => column);
+
+  GeneratedColumn<String> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
 
   $$ProfilesTableAnnotationComposer get profileId {
     final $$ProfilesTableAnnotationComposer composer = $composerBuilder(
@@ -3736,12 +4376,14 @@ class $$AgentNumbersTableTableManager
                 Value<OperatorType> operateur = const Value.absent(),
                 Value<String> numeroPuce = const Value.absent(),
                 Value<double> soldePuce = const Value.absent(),
+                Value<String?> color = const Value.absent(),
               }) => AgentNumbersCompanion(
                 id: id,
                 profileId: profileId,
                 operateur: operateur,
                 numeroPuce: numeroPuce,
                 soldePuce: soldePuce,
+                color: color,
               ),
           createCompanionCallback:
               ({
@@ -3750,12 +4392,14 @@ class $$AgentNumbersTableTableManager
                 required OperatorType operateur,
                 required String numeroPuce,
                 Value<double> soldePuce = const Value.absent(),
+                Value<String?> color = const Value.absent(),
               }) => AgentNumbersCompanion.insert(
                 id: id,
                 profileId: profileId,
                 operateur: operateur,
                 numeroPuce: numeroPuce,
                 soldePuce: soldePuce,
+                color: color,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3860,6 +4504,8 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       required double montant,
       Value<TransactionStatus> statut,
       Value<String?> nomClient,
+      Value<double> fraisOperateur,
+      Value<double> fraisClient,
       Value<double> bonus,
       Value<String?> numeroClient,
       required String reference,
@@ -3876,6 +4522,8 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<double> montant,
       Value<TransactionStatus> statut,
       Value<String?> nomClient,
+      Value<double> fraisOperateur,
+      Value<double> fraisClient,
       Value<double> bonus,
       Value<String?> numeroClient,
       Value<String> reference,
@@ -3971,6 +4619,16 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get nomClient => $composableBuilder(
     column: $table.nomClient,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4085,6 +4743,16 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get bonus => $composableBuilder(
     column: $table.bonus,
     builder: (column) => ColumnOrderings(column),
@@ -4184,6 +4852,16 @@ class $$TransactionsTableAnnotationComposer
   GeneratedColumn<String> get nomClient =>
       $composableBuilder(column: $table.nomClient, builder: (column) => column);
 
+  GeneratedColumn<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get bonus =>
       $composableBuilder(column: $table.bonus, builder: (column) => column);
 
@@ -4282,6 +4960,8 @@ class $$TransactionsTableTableManager
                 Value<double> montant = const Value.absent(),
                 Value<TransactionStatus> statut = const Value.absent(),
                 Value<String?> nomClient = const Value.absent(),
+                Value<double> fraisOperateur = const Value.absent(),
+                Value<double> fraisClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
                 Value<String> reference = const Value.absent(),
@@ -4296,6 +4976,8 @@ class $$TransactionsTableTableManager
                 montant: montant,
                 statut: statut,
                 nomClient: nomClient,
+                fraisOperateur: fraisOperateur,
+                fraisClient: fraisClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
                 reference: reference,
@@ -4312,6 +4994,8 @@ class $$TransactionsTableTableManager
                 required double montant,
                 Value<TransactionStatus> statut = const Value.absent(),
                 Value<String?> nomClient = const Value.absent(),
+                Value<double> fraisOperateur = const Value.absent(),
+                Value<double> fraisClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
                 required String reference,
@@ -4326,6 +5010,8 @@ class $$TransactionsTableTableManager
                 montant: montant,
                 statut: statut,
                 nomClient: nomClient,
+                fraisOperateur: fraisOperateur,
+                fraisClient: fraisClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
                 reference: reference,
@@ -4862,6 +5548,243 @@ typedef $$LogActivitiesTableProcessedTableManager =
       LogActivity,
       PrefetchHooks Function({bool adminId, bool agentId})
     >;
+typedef $$TarifsTableCreateCompanionBuilder =
+    TarifsCompanion Function({
+      Value<int> id,
+      required OperatorType operateur,
+      required double montantMin,
+      required double montantMax,
+      required double fraisOperateur,
+      required double fraisClient,
+      Value<DateTime> derniereMaj,
+    });
+typedef $$TarifsTableUpdateCompanionBuilder =
+    TarifsCompanion Function({
+      Value<int> id,
+      Value<OperatorType> operateur,
+      Value<double> montantMin,
+      Value<double> montantMax,
+      Value<double> fraisOperateur,
+      Value<double> fraisClient,
+      Value<DateTime> derniereMaj,
+    });
+
+class $$TarifsTableFilterComposer
+    extends Composer<_$AppDatabase, $TarifsTable> {
+  $$TarifsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<OperatorType, OperatorType, int>
+  get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<double> get montantMin => $composableBuilder(
+    column: $table.montantMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get montantMax => $composableBuilder(
+    column: $table.montantMax,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get derniereMaj => $composableBuilder(
+    column: $table.derniereMaj,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TarifsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TarifsTable> {
+  $$TarifsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get operateur => $composableBuilder(
+    column: $table.operateur,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get montantMin => $composableBuilder(
+    column: $table.montantMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get montantMax => $composableBuilder(
+    column: $table.montantMax,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get derniereMaj => $composableBuilder(
+    column: $table.derniereMaj,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TarifsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TarifsTable> {
+  $$TarifsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<OperatorType, int> get operateur =>
+      $composableBuilder(column: $table.operateur, builder: (column) => column);
+
+  GeneratedColumn<double> get montantMin => $composableBuilder(
+    column: $table.montantMin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get montantMax => $composableBuilder(
+    column: $table.montantMax,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fraisOperateur => $composableBuilder(
+    column: $table.fraisOperateur,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fraisClient => $composableBuilder(
+    column: $table.fraisClient,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get derniereMaj => $composableBuilder(
+    column: $table.derniereMaj,
+    builder: (column) => column,
+  );
+}
+
+class $$TarifsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TarifsTable,
+          TarifData,
+          $$TarifsTableFilterComposer,
+          $$TarifsTableOrderingComposer,
+          $$TarifsTableAnnotationComposer,
+          $$TarifsTableCreateCompanionBuilder,
+          $$TarifsTableUpdateCompanionBuilder,
+          (TarifData, BaseReferences<_$AppDatabase, $TarifsTable, TarifData>),
+          TarifData,
+          PrefetchHooks Function()
+        > {
+  $$TarifsTableTableManager(_$AppDatabase db, $TarifsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TarifsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TarifsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TarifsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<OperatorType> operateur = const Value.absent(),
+                Value<double> montantMin = const Value.absent(),
+                Value<double> montantMax = const Value.absent(),
+                Value<double> fraisOperateur = const Value.absent(),
+                Value<double> fraisClient = const Value.absent(),
+                Value<DateTime> derniereMaj = const Value.absent(),
+              }) => TarifsCompanion(
+                id: id,
+                operateur: operateur,
+                montantMin: montantMin,
+                montantMax: montantMax,
+                fraisOperateur: fraisOperateur,
+                fraisClient: fraisClient,
+                derniereMaj: derniereMaj,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required OperatorType operateur,
+                required double montantMin,
+                required double montantMax,
+                required double fraisOperateur,
+                required double fraisClient,
+                Value<DateTime> derniereMaj = const Value.absent(),
+              }) => TarifsCompanion.insert(
+                id: id,
+                operateur: operateur,
+                montantMin: montantMin,
+                montantMax: montantMax,
+                fraisOperateur: fraisOperateur,
+                fraisClient: fraisClient,
+                derniereMaj: derniereMaj,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TarifsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TarifsTable,
+      TarifData,
+      $$TarifsTableFilterComposer,
+      $$TarifsTableOrderingComposer,
+      $$TarifsTableAnnotationComposer,
+      $$TarifsTableCreateCompanionBuilder,
+      $$TarifsTableUpdateCompanionBuilder,
+      (TarifData, BaseReferences<_$AppDatabase, $TarifsTable, TarifData>),
+      TarifData,
+      PrefetchHooks Function()
+    >;
 typedef $$SmsReceivedTableCreateCompanionBuilder =
     SmsReceivedCompanion Function({
       Value<int> id,
@@ -5169,6 +6092,8 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$LogActivitiesTableTableManager get logActivities =>
       $$LogActivitiesTableTableManager(_db, _db.logActivities);
+  $$TarifsTableTableManager get tarifs =>
+      $$TarifsTableTableManager(_db, _db.tarifs);
   $$SmsReceivedTableTableManager get smsReceived =>
       $$SmsReceivedTableTableManager(_db, _db.smsReceived);
 }

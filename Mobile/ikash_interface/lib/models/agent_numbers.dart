@@ -16,4 +16,6 @@ class AgentNumbers extends Table {
 
   // Le solde actuel de cette puce précise
   RealColumn get soldePuce => real().withDefault(const Constant(0.0))();
+  // Optionnel : une couleur pour différencier visuellement les puces dans l'interface
+  TextColumn get color => text().nullable()();
 }

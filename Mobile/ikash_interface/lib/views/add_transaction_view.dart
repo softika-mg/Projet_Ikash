@@ -8,7 +8,8 @@ import 'package:drift/drift.dart' as d;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/app_database.dart';
 import '../widgets/status_dialog.dart';
-import '../providers/agent_number_provider.dart';
+import '../services/tarif_service.dart';
+import '../database/app_database.dart';
 
 
 
@@ -33,6 +34,52 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
   String _type = 'DEPOT';
   String _operator = 'TELMA';
   final DateTime _now = DateTime.now();
+
+  // --- LOGIQUE DE VALIDATION DES PRÉFIXES ---
+  String? _validatePhoneNumber(String? value) {
+    if (value == null || value.isEmpty) return "Numéro obligatoire";
+    final cleanNum = value.replaceAll(' ', '');
+    if (cleanNum.length != 10) return "Doit contenir 10 chiffres";
+
+    final prefix = cleanNum.substring(0, 3);
+    Map<String, List<String>> validPrefixes = {
+      'TELMA': ['034', '038'],
+      'ORANGE': ['032', '037'],
+      'AIRTEL': ['033'],
+    };
+
+    if (!validPrefixes[_operator]!.contains(prefix)) {
+      return "Préfixe invalide pour $_operator ($prefix)";
+    }
+    return null;
+  }
+  void _onAmountChanged(String value) {
+    final montant = double.tryParse(value) ?? 0;
+    if (montant == 0) return;
+
+    // On récupère la liste des tarifs depuis le provider
+    final tarifsAsync = ref.read(tarifsStreamProvider);
+
+    tarifsAsync.whenData((liste) {
+      try {
+        // On cherche la tranche correspondante
+        final tarifMatch = liste.firstWhere((t) =>
+          t.operateur == _selectedOperator &&
+          montant >= t.montantMin &&
+          montant <= t.montantMax
+        );
+
+        setState(() {
+          _feeController.text = tarifMatch.fraisClient.toInt().toString();
+          // Commission estimée (Gain de l'agence)
+          final gain = tarifMatch.fraisClient - tarifMatch.fraisOperateur;
+          _commissionController.text = gain.toInt().toString();
+        });
+      } catch (e) {
+        // Pas de tranche trouvée
+      }
+    });
+  }
 
   // Mapper pour les Enums
   TransactionType get _selectedType => TransactionType.values.firstWhere(
@@ -64,14 +111,20 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
       try {
         final montant = double.tryParse(_amountController.text) ?? 0;
         final frais = double.tryParse(_feeController.text) ?? 0;
-        // --- NOUVELLE LOGIQUE DE LIAISON ---
-      // 1. On cherche le numéro enregistré pour cet opérateur
-      final agentNumbers = await ref.read(transactionControllerProvider).getAllAgentNumbers();
-      final correctNumber = agentNumbers.firstWhere(
-        (n) => n.operateur == _selectedOperator,
-        orElse: () => throw Exception("Aucun numéro configuré pour $_operator"),
-      );
-      // -----------------------------------
+
+        // --- LOGIQUE Puce avec ou sans ID ---
+        int agentPuceId = 0;
+        try {
+        final agentNumbers = await ref.read(transactionControllerProvider).getAllAgentNumbers();
+        final correctNumber = agentNumbers.firstWhere((n) => n.operateur == _selectedOperator);
+        agentPuceId = correctNumber.id;
+          } catch (e) {
+        // Si aucune puce n'est trouvée, on reste à 0
+        if (_selectedType == TransactionType.depot || _selectedType == TransactionType.retrait) {
+           throw Exception("Une puce officielle est requise pour les Dépôts/Retraits.");
+        }
+        // Pour Crédit/Transfert, on laisse agentPuceId à 0
+      }
 
         final companion = TransactionsCompanion.insert(
           type: _selectedType,
@@ -79,40 +132,23 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
           reference: _refController.text,
           montant: montant,
           horodatage: d.Value(_now),
-          // On lie la transaction à l'ID de la puce trouvée !
-          agentId: correctNumber.id,
+          agentId: agentPuceId, // Peut être null pour les puces simples
           bonus: d.Value(frais),
           numeroClient: d.Value(_phoneController.text),
           nomClient: d.Value(_nameController.text),
-
-          // Ajoute ici tes autres champs (frais, commission, etc.) selon ton .drift
         );
 
-        await ref
-            .read(transactionControllerProvider)
-            .saveTransaction(companion);
+        await ref.read(transactionControllerProvider).saveTransaction(companion);
 
         if (mounted) {
-          // Utilisation du nouveau widget
-          AppStatusDialog.show(
-            context,
-            title: "Succès !",
-            message: "La transaction ${_refController.text} a été enregistrée.",
-          );
-
-          // On vide les champs après succès si on veut rester sur la page,
-          // ou on attend un peu avant de faire Navigator.pop
+          AppStatusDialog.show(context, title: "Succès !", message: "Transaction enregistrée avec succès.");
           _refController.clear();
           _amountController.clear();
+          _phoneController.clear();
         }
       } catch (e) {
         if (mounted) {
-          AppStatusDialog.show(
-            context,
-            title: "Oups !",
-            message: "Impossible d'enregistrer : $e",
-            isError: true,
-          );
+          AppStatusDialog.show(context, title: "Erreur", message: e.toString(), isError: true);
         }
       }
     }
@@ -121,15 +157,8 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Numérisation SMS"),
-        centerTitle: true,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text("Nouvelle Transaction"), centerTitle: true),
       body: Column(
         children: [
           Expanded(
@@ -138,206 +167,128 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- Horodatage Automatique ---
-                    _buildInfoBadge(
-                      theme,
-                      LucideIcons.calendar,
-                      "Le ${DateFormat('dd/MM/yy à HH:mm').format(_now)}",
-                    ),
+                    _buildInfoBadge(theme, LucideIcons.calendar, "Le ${DateFormat('dd/MM/yy à HH:mm').format(_now)}"),
                     const SizedBox(height: 20),
 
-                    // --- Choix de l'Opérateur ---
-                    Text("Opérateur", style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _buildOperatorChip(
-                          "TELMA",
-                          Colors.yellow.shade800,
-                          theme,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildOperatorChip("ORANGE", Colors.orange, theme),
-                        const SizedBox(width: 8),
-                        _buildOperatorChip("AIRTEL", Colors.red, theme),
-                      ],
-                    ),
+                    // Opérateurs
+                    Row(children: [
+                      _buildOperatorChip("TELMA", Colors.yellow.shade800, theme),
+                      const SizedBox(width: 8),
+                      _buildOperatorChip("ORANGE", Colors.orange, theme),
+                      const SizedBox(width: 8),
+                      _buildOperatorChip("AIRTEL", Colors.red, theme),
+                    ]),
                     const SizedBox(height: 25),
 
-                    // --- Type de transaction ---
-                    Text(
-                      "Type d'opération",
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 10),
+                    // Types
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTypeOption(
-                            "DEPOT",
-                            LucideIcons.download,
-                            Colors.green,
-                            theme,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildTypeOption(
-                            "RETRAIT",
-                            LucideIcons.upload,
-                            Colors.blue,
-                            theme,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildTypeOption(
-                            "TRANSFERT",
-                            LucideIcons.repeat,
-                            Colors.purple,
-                            theme,
-                          ),
-                          const SizedBox(width: 10),
-                          _buildTypeOption(
-                            "CREDIT",
-                            LucideIcons.phoneCall,
-                            Colors.teal,
-                            theme,
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        _buildTypeOption("DEPOT", LucideIcons.download, Colors.green, theme),
+                        const SizedBox(width: 10),
+                        _buildTypeOption("RETRAIT", LucideIcons.upload, Colors.blue, theme),
+                        const SizedBox(width: 10),
+                        _buildTypeOption("TRANSFERT", LucideIcons.repeat, Colors.purple, theme),
+                        const SizedBox(width: 10),
+                        _buildTypeOption("CREDIT", LucideIcons.phoneCall, Colors.teal, theme),
+                      ]),
                     ),
                     const SizedBox(height: 30),
 
-                    // --- Champs d'identification ---
-                    _buildTextField(
-                      controller: _refController, // Ajouté
-                      theme: theme,
-                      label: "Référence (ID)",
-                      hint: "Ref: 878...",
-                      icon: LucideIcons.hash,
-                    ),
+                    _buildTextField(controller: _refController, theme: theme, label: "Référence", hint: "ID Transaction", icon: LucideIcons.hash),
                     const SizedBox(height: 15),
                     _buildTextField(
-                      controller: _phoneController, // Ajouté
+                      controller: _phoneController,
                       theme: theme,
                       label: "Numéro Client",
                       hint: "03X XX XXX XX",
-                      icon: LucideIcons.user,
-                      keyboardType: TextInputType.phone,
+                      icon: LucideIcons.phone,
+                      validator: _validatePhoneNumber,
+                      keyboardType: TextInputType.phone
                     ),
                     const SizedBox(height: 15),
-                    _buildTextField(
-                      controller: _nameController,
-                      theme: theme,
-                      label: "Nom du Client",
-                      hint: "Nom complet",
-                      icon: LucideIcons.contact,
-                    ),
+                    _buildTextField(controller: _nameController, theme: theme, label: "Nom Client", hint: "Facultatif", icon: LucideIcons.user),
 
-                    const SizedBox(height: 25),
-                    const Divider(),
-                    const SizedBox(height: 25),
+                    const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
 
-                    // --- Montant et Calculs ---
                     _buildTextField(
                       controller: _amountController,
                       theme: theme,
-                      label: "Montant Principal (Ar)",
+                      label: "Montant (Ar)",
                       hint: "0",
                       icon: LucideIcons.banknote,
                       isAmount: true,
-                      keyboardType: TextInputType.number,
+                      onChanged: _onAmountChanged, // Déclenche le calcul
+                      keyboardType: TextInputType.number
                     ),
                     const SizedBox(height: 15),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildTextField(
-                            controller: _feeController,
-                            theme: theme,
-                            label: (_type == 'DEPOT' || _type == 'TRANSFERT')
-                                ? "Frais (Ar)"
-                                : "Bonus (Ar)",
-                            hint: "0",
-                            icon: LucideIcons.plusCircle,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: _buildTextField(
-                            controller: _commissionController,
-                            theme: theme,
-                            label: "Commission (Ar)",
-                            hint: "0",
-                            icon: LucideIcons.coins,
-                            keyboardType: TextInputType.number,
-                          ),
-                        ),
-                      ],
-                    ),
+                    Row(children: [
+                      Expanded(child: _buildTextField(controller: _feeController, theme: theme, label: "Frais Client", hint: "Auto", icon: LucideIcons.plusCircle)),
+                      const SizedBox(width: 15),
+                      Expanded(child: _buildTextField(controller: _commissionController, theme: theme, label: "Gain estimé", hint: "Auto", icon: LucideIcons.trendingUp)),
+                    ]),
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
             ),
           ),
-
-          // --- Bouton Enregistrer Stické ---
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              boxShadow: [
-                if (!isDark)
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-              ],
-              border: isDark
-                  ? Border(
-                      top: BorderSide(
-                        color: theme.dividerColor.withOpacity(0.1),
-                      ),
-                    )
-                  : null,
-            ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () async {
-                    // 1. On valide le formulaire (les champs rouges s'affichent si besoin)
-                    if (_formKey.currentState!.validate()) {
-                      // 2. On attend que la sauvegarde soit terminée
-                      await _handleSave();
-
-                      // Note : Le Navigator.pop est maintenant géré à l'intérieur de _handleSave
-                      // après que l'utilisateur a cliqué sur "COMPRIS" dans le dialogue,
-                      // OU tu peux le laisser ici si tu préfères fermer la page automatiquement.
-                    }
-                  },
-                  child: const Text(
-                    "ENREGISTRER LA TRANSACTION",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildSaveButton(theme),
         ],
       ),
+    );
+  }
+  Widget _buildSaveButton(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      color: theme.cardColor,
+      child: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: theme.primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+            onPressed: _handleSave,
+            child: const Text("VALIDER L'OPÉRATION", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required ThemeData theme,
+    required String label,
+    required String hint,
+    required IconData icon,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    bool isAmount = false,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          validator: validator ?? (v) => v!.isEmpty ? "Requis" : null,
+          onChanged: onChanged,
+          keyboardType: keyboardType,
+          style: TextStyle(fontSize: isAmount ? 22 : 16, fontWeight: isAmount ? FontWeight.bold : FontWeight.normal),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: theme.primaryColor),
+            hintText: hint,
+            filled: true,
+            fillColor: theme.brightness == Brightness.dark ? Colors.white10 : Colors.grey.shade100,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+      ],
     );
   }
 
@@ -430,53 +381,6 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required ThemeData theme,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required TextEditingController controller, // Ajouté
-    TextInputType? keyboardType,
-    bool isAmount = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller, // Assignation du controller
-          keyboardType: keyboardType,
-          validator: (v) => v!.isEmpty ? "Obligatoire" : null,
-          style: isAmount
-              ? const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)
-              : null,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(
-              icon,
-              size: 20,
-              color: theme.primaryColor.withOpacity(0.7),
-            ),
-            filled: true,
-            fillColor: theme.brightness == Brightness.dark
-                ? Colors.white10
-                : Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

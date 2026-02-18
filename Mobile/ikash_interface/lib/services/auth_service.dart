@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../models/enum.dart';
+import '../database/database_seeder.dart';
 
 // 1. Le Provider pour la Base de données
 final databaseProvider = Provider((ref) => AppDatabase());
@@ -51,23 +52,28 @@ class AuthService {
               role: const Value(RoleType.agent),
             ),
           );
+
     }
+    await db.seedTarifsInitiaux();
   }
 
   /// Tentative de connexion via PIN
   // Dans ton AuthService ou AppDatabase
-/// Tentative de connexion via PIN
-Future<Profile?> login(String pin) async {
-  // On utilise db.select et db.profiles
-  final user = await (db.select(db.profiles)..where((t) => t.codePin.equals(pin))).getSingleOrNull();
+  /// Tentative de connexion via PIN
+  Future<Profile?> login(String pin) async {
+    // On utilise db.select et db.profiles
+    final user = await (db.select(
+      db.profiles,
+    )..where((t) => t.codePin.equals(pin))).getSingleOrNull();
 
-  if (user != null) {
-    // Si l'utilisateur est trouvé, on met à jour le provider de session
-    ref.read(currentUserProvider.notifier).setUser(user);
+    if (user != null) {
+      // Si l'utilisateur est trouvé, on met à jour le provider de session
+      ref.read(currentUserProvider.notifier).setUser(user);
+    }
+
+    return user;
   }
 
-  return user;
-}
   // Dans AuthService
   Future<void> logout() async {
     // On remet l'utilisateur à null

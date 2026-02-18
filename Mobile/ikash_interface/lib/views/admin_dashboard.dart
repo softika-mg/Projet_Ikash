@@ -6,7 +6,6 @@ import '../models/enum.dart';
 import '../core/utils/formatters.dart';
 import '../services/auth_service.dart';
 
-
 class AdminDashboard extends ConsumerWidget {
   const AdminDashboard({super.key});
 
@@ -17,7 +16,9 @@ class AdminDashboard extends ConsumerWidget {
     final db = ref.watch(databaseProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.grey.shade50,
+      backgroundColor: isDark
+          ? theme.scaffoldBackgroundColor
+          : Colors.grey.shade50,
       body: StreamBuilder<List<Transaction>>(
         stream: db.watchAllTransactions(),
         builder: (context, snapshot) {
@@ -38,8 +39,10 @@ class AdminDashboard extends ConsumerWidget {
 
           for (var tx in transactions) {
             volumeTotal += tx.montant;
-            volumeParPuce[tx.operateur] = (volumeParPuce[tx.operateur] ?? 0) + tx.montant;
-            nombreOpsParPuce[tx.operateur] = (nombreOpsParPuce[tx.operateur] ?? 0) + 1;
+            volumeParPuce[tx.operateur] =
+                (volumeParPuce[tx.operateur] ?? 0) + tx.montant;
+            nombreOpsParPuce[tx.operateur] =
+                (nombreOpsParPuce[tx.operateur] ?? 0) + 1;
           }
 
           return SingleChildScrollView(
@@ -80,23 +83,32 @@ class AdminDashboard extends ConsumerWidget {
                 // --- Section Classement des Puces ---
                 Text(
                   "Activité par SIM",
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 15),
 
                 // On génère dynamiquement les cartes pour chaque opérateur
-                ...OperatorType.values.map((op) => _buildSimRankCard(
-                  theme,
-                  op.name.toUpperCase(),
-                  CurrencyFormatter.format(volumeParPuce[op] ?? 0),
-                  "${nombreOpsParPuce[op]} opérations",
-                  _getOpColor(op),
-                )),
+                ...OperatorType.values.map(
+                  (op) => _buildSimRankCard(
+                    theme,
+                    op.name.toUpperCase(),
+                    CurrencyFormatter.format(volumeParPuce[op] ?? 0),
+                    "${nombreOpsParPuce[op]} opérations",
+                    _getOpColor(op),
+                  ),
+                ),
 
                 const SizedBox(height: 30),
 
                 // --- Répartition Visuelle ---
-                _buildDistributionSection(theme, isDark, volumeParPuce, volumeTotal),
+                _buildDistributionSection(
+                  theme,
+                  isDark,
+                  volumeParPuce,
+                  volumeTotal,
+                ),
               ],
             ),
           );
@@ -107,7 +119,13 @@ class AdminDashboard extends ConsumerWidget {
 
   // --- COMPOSANTS UI ---
 
-  Widget _buildSimRankCard(ThemeData theme, String name, String volume, String desc, Color color) {
+  Widget _buildSimRankCard(
+    ThemeData theme,
+    String name,
+    String volume,
+    String desc,
+    Color color,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -131,21 +149,36 @@ class AdminDashboard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 Text(desc, style: theme.textTheme.bodySmall),
               ],
             ),
           ),
           Text(
             volume,
-            style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 15),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: 15,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDistributionSection(ThemeData theme, bool isDark, Map<OperatorType, double> volumes, double total) {
+  Widget _buildDistributionSection(
+    ThemeData theme,
+    bool isDark,
+    Map<OperatorType, double> volumes,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -155,11 +188,19 @@ class AdminDashboard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Répartition du Volume", style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            "Répartition du Volume",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 20),
           ...OperatorType.values.map((op) {
             double percent = total > 0 ? (volumes[op] ?? 0) / total : 0;
-            return _buildAdminProgress(theme, op.name.toUpperCase(), percent, _getOpColor(op));
+            return _buildAdminProgress(
+              theme,
+              op.name.toUpperCase(),
+              percent,
+              _getOpColor(op),
+            );
           }),
         ],
       ),
@@ -169,19 +210,24 @@ class AdminDashboard extends ConsumerWidget {
   // --- HELPERS ---
 
   Color _getOpColor(OperatorType type) {
-  switch (type) {
-    case OperatorType.telma:
-      return Colors.yellow.shade800;
-    case OperatorType.orange:
-      return Colors.orange;
-    case OperatorType.airtel:
-      return Colors.red;
-    case OperatorType.autre: // Ajout du cas manquant
-      return Colors.grey;
+    switch (type) {
+      case OperatorType.telma:
+        return Colors.yellow.shade800;
+      case OperatorType.orange:
+        return Colors.orange;
+      case OperatorType.airtel:
+        return Colors.red;
+      case OperatorType.autre: // Ajout du cas manquant
+        return Colors.grey;
+    }
   }
-}
 
-  Widget _buildSummaryCard({required String title, required String value, required IconData icon, required Color color}) {
+  Widget _buildSummaryCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -194,15 +240,32 @@ class AdminDashboard extends ConsumerWidget {
           children: [
             Icon(icon, color: Colors.white, size: 28),
             const SizedBox(height: 15),
-            FittedBox(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            FittedBox(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAdminProgress(ThemeData theme, String label, double percent, Color color) {
+  Widget _buildAdminProgress(
+    ThemeData theme,
+    String label,
+    double percent,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -211,7 +274,10 @@ class AdminDashboard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-              Text("${(percent * 100).toInt()}%", style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              Text(
+                "${(percent * 100).toInt()}%",
+                style: TextStyle(color: color, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 8),

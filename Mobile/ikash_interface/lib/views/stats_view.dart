@@ -6,7 +6,6 @@ import '../models/enum.dart';
 import '../core/utils/formatters.dart';
 import '../services/auth_service.dart';
 
-
 class StatsView extends ConsumerWidget {
   const StatsView({super.key});
 
@@ -37,17 +36,20 @@ class StatsView extends ConsumerWidget {
 
           for (var tx in transactions) {
             // Filtrer sur le mois actuel uniquement
-            if (tx.horodatage.month == now.month && tx.horodatage.year == now.year) {
+            if (tx.horodatage.month == now.month &&
+                tx.horodatage.year == now.year) {
               totalCommissionsMois += tx.bonus ?? 0;
 
-              if (tx.type == TransactionType.depot || tx.type == TransactionType.transfert) {
+              if (tx.type == TransactionType.depot ||
+                  tx.type == TransactionType.transfert) {
                 volumeDepots += tx.montant;
               } else if (tx.type == TransactionType.retrait) {
                 volumeRetraits += tx.montant;
               }
 
               // Cumul par opérateur pour la barre de progression
-              opVolumes[tx.operateur] = (opVolumes[tx.operateur] ?? 0) + tx.montant;
+              opVolumes[tx.operateur] =
+                  (opVolumes[tx.operateur] ?? 0) + tx.montant;
             }
           }
 
@@ -62,7 +64,11 @@ class StatsView extends ConsumerWidget {
                   child: Column(
                     children: [
                       // --- Carte Commission Dynamique ---
-                      _buildHeroCommissionCard(theme, isDark, totalCommissionsMois),
+                      _buildHeroCommissionCard(
+                        theme,
+                        isDark,
+                        totalCommissionsMois,
+                      ),
 
                       const SizedBox(height: 15),
                       // --- Grille de Volumes ---
@@ -93,10 +99,13 @@ class StatsView extends ConsumerWidget {
 
                       const SizedBox(height: 15),
 
-
-
                       // --- Répartition par Opérateur ---
-                      _buildOperatorSection(theme, isDark, opVolumes, totalVolumeMois),
+                      _buildOperatorSection(
+                        theme,
+                        isDark,
+                        opVolumes,
+                        totalVolumeMois,
+                      ),
                     ],
                   ),
                 ),
@@ -117,7 +126,10 @@ class StatsView extends ConsumerWidget {
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
           "Mes Gains & Stats",
-          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: theme.textTheme.titleLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -132,7 +144,10 @@ class StatsView extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [theme.primaryColor, isDark ? Colors.green.shade800 : Colors.greenAccent.shade700],
+          colors: [
+            theme.primaryColor,
+            isDark ? Colors.green.shade800 : Colors.greenAccent.shade700,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -140,11 +155,18 @@ class StatsView extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const Text("Commissions cumulées ce mois", style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const Text(
+            "Commissions cumulées ce mois",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           Text(
             CurrencyFormatter.format(amount),
-            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 15),
           const Divider(color: Colors.white24),
@@ -152,8 +174,14 @@ class StatsView extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildQuickStat("Performance", amount > 50000 ? "Excellente" : "Stable"),
-              _buildQuickStat("Bonus Estimé", CurrencyFormatter.format(amount * 0.1)),
+              _buildQuickStat(
+                "Performance",
+                amount > 50000 ? "Excellente" : "Stable",
+              ),
+              _buildQuickStat(
+                "Bonus Estimé",
+                CurrencyFormatter.format(amount * 0.1),
+              ),
             ],
           ),
         ],
@@ -161,18 +189,32 @@ class StatsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildOperatorSection(ThemeData theme, bool isDark, Map<OperatorType, double> volumes, double total) {
+  Widget _buildOperatorSection(
+    ThemeData theme,
+    bool isDark,
+    Map<OperatorType, double> volumes,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? theme.dividerColor.withOpacity(0.1) : Colors.grey.shade100),
+        border: Border.all(
+          color: isDark
+              ? theme.dividerColor.withOpacity(0.1)
+              : Colors.grey.shade100,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Répartition par Opérateur", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            "Répartition par Opérateur",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 20),
           ...OperatorType.values.map((op) {
             double share = total > 0 ? (volumes[op] ?? 0) / total : 0;
@@ -199,13 +241,28 @@ class StatsView extends ConsumerWidget {
   Widget _buildQuickStat(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white60, fontSize: 11),
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(ThemeData theme, String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    ThemeData theme,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -219,7 +276,12 @@ class StatsView extends ConsumerWidget {
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 8),
           FittedBox(
-            child: Text(value, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            child: Text(
+              value,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           Text(title, style: theme.textTheme.bodySmall),
         ],
@@ -227,7 +289,12 @@ class StatsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildOperatorProgress(ThemeData theme, String label, double percent, Color color) {
+  Widget _buildOperatorProgress(
+    ThemeData theme,
+    String label,
+    double percent,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -235,8 +302,16 @@ class StatsView extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-              Text("${(percent * 100).toInt()}%", style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                "${(percent * 100).toInt()}%",
+                style: TextStyle(color: color, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 8),

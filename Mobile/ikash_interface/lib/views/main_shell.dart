@@ -15,6 +15,7 @@ import 'profil_view.dart';
 import 'setting_view.dart';
 import 'about_view.dart';
 import 'tutorial_view.dart';
+import 'tarif_admin_screen.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -93,7 +94,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
 
       // --- Drawer ---
-      drawer: _buildModernDrawer(context, user, theme),
+      drawer: _buildModernDrawer(context, user, theme, isAdmin),
 
       // --- Body ---
       body: pages[_currentIndex],
@@ -128,7 +129,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  Widget _buildModernDrawer(BuildContext context, user, ThemeData theme) {
+  Widget _buildModernDrawer(BuildContext context, user, ThemeData theme, bool isAdmin) {
     return Drawer(
       child: Column(
         children: [
@@ -164,6 +165,21 @@ class _MainShellState extends ConsumerState<MainShell> {
               context,
               MaterialPageRoute(builder: (_) => const ProfilView()),
             ),
+          ),
+          ListTile(
+            leading: Icon(
+              isAdmin ? LucideIcons.database : LucideIcons.list,
+              color: Colors.orange
+            ),
+            title: const Text("Grille Tarifaire"),
+            subtitle: Text(isAdmin ? "Consulter et modifier les tarifs" : "Consulter les frais de transaction"),
+            onTap: () {
+              Navigator.pop(context); // Ferme le drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TarifAdminScreen()),
+              );
+            },
           ),
 
           // --- Section Aide & Guide ---
