@@ -4,57 +4,88 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../database/app_database.dart';
 import '../core/utils/formatters.dart';
+import "log_details_view.dart";
 import '../services/auth_service.dart';
 
 class AdminLogsView extends ConsumerWidget {
   const AdminLogsView({super.key});
+
+  // --- Utilitaire pour convertir le String Hexa en Color (identique au dashboard) ---
+  Color _getParsedColor(String? dbColor) {
+    if (dbColor == null || dbColor.isEmpty) return Colors.blueGrey;
+    try {
+      if (dbColor.contains('#')) {
+        return Color(int.parse(dbColor.replaceAll('#', 'FF'), radix: 16));
+      }
+      return Color(int.parse(dbColor));
+    } catch (e) {
+      return Colors.blueGrey;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final db = ref.watch(databaseProvider);
 
+    // On récupère les puces pour avoir accès à leurs couleurs
+    final pucesAsync = ref.watch(allPucesProvider);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Flux d'activités"),
+        title: const Text("Vérification des Flux", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
       ),
-      body: StreamBuilder<List<Transaction>>(
-        // On récupère les 50 dernières transactions pour le flux
-        stream: db.watchAllTransactions(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: pucesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text("Erreur : $err")),
+        data: (listePuces) {
+          return StreamBuilder<List<Transaction>>(
+            stream: db.watchAllTransactions(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          final transactions = snapshot.data!;
+              final transactions = snapshot.data!;
+              if (transactions.isEmpty) return const Center(child: Text("Aucune activité"));
 
-          if (transactions.isEmpty) {
-            return const Center(child: Text("Aucune activité récente"));
-          }
+              return StreamBuilder<List<SmsReceivedData>>(
+                stream: db.watchAllSms(),
+                builder: (context, smsSnapshot) {
+                  final allSms = smsSnapshot.data ?? [];
 
-          return ListView.builder(
-            itemCount: transactions.length,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            itemBuilder: (context, index) {
-              final tx = transactions[index];
+                  return ListView.builder(
+                    itemCount: transactions.length,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    itemBuilder: (context, index) {
+                      final tx = transactions[index];
 
-              // Déduction d'un "état d'erreur" (exemple : bonus nul ou montant suspect)
-              final bool isWarning = tx.bonus == 0 && tx.montant > 0;
+                      // 1. Trouver la puce correspondante pour obtenir la couleur
+                      final puceAssociee = listePuces.cast<AgentNumber?>().firstWhere(
+                        (p) => p?.operateur == tx.operateur,
+                        orElse: () => null,
+                      );
 
-              return _buildLogTile(
-                theme: theme,
-                // On affiche l'opérateur comme "Agent/Source"
-                source: tx.operateur.name.toUpperCase(),
-                action: "${tx.type.name.toUpperCase()} validé",
-                time: _formatTimestamp(tx.horodatage),
-                status: isWarning ? "Vérification" : "Succès",
-                message:
-                    "Réf: ${tx.reference} | ${CurrencyFormatter.format(tx.montant)}",
-                isWarning: isWarning,
-                isLast: index == transactions.length - 1,
+                      final Color opColor = _getParsedColor(puceAssociee?.color);
+
+                      // 2. Trouver le SMS correspondant
+                      final matchingSms = allSms.cast<SmsReceivedData?>().firstWhere(
+                        (s) => s?.reference == tx.reference,
+                        orElse: () => null,
+                      );
+
+                      return _buildEnhancedLogTile(
+                        context: context,
+                        theme: theme,
+                        tx: tx,
+                        sms: matchingSms,
+                        opColor: opColor,
+                        isLast: index == transactions.length - 1,
+                      );
+                    },
+                  );
+                },
               );
             },
           );
@@ -63,114 +94,125 @@ class AdminLogsView extends ConsumerWidget {
     );
   }
 
-  String _formatTimestamp(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 60) {
-      return "Il y a ${difference.inMinutes} min";
-    } else if (difference.inHours < 24) {
-      return "Il y a ${difference.inHours} h";
-    } else {
-      return DateFormat('dd MMM, HH:mm', 'fr_FR').format(date);
-    }
-  }
-
-  Widget _buildLogTile({
+  Widget _buildEnhancedLogTile({
+    required BuildContext context,
     required ThemeData theme,
-    required String source,
-    required String action,
-    required String time,
-    required String status,
-    required String message,
-    required bool isWarning,
+    required Transaction tx,
+    required SmsReceivedData? sms,
+    required Color opColor, // Nouvelle propriété
     bool isLast = false,
   }) {
-    final isDark = theme.brightness == Brightness.dark;
+    Color statusColor;
+    String statusText;
+    IconData statusIcon;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Timeline ---
-          Column(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: isWarning ? Colors.orange : Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark
-                        ? theme.scaffoldBackgroundColor
-                        : Colors.white,
-                    width: 2,
-                  ),
-                ),
-              ),
-              if (!isLast)
-                Container(
-                  width: 2,
-                  height: 70,
-                  color: theme.dividerColor.withOpacity(0.1),
-                ),
-            ],
+    if (sms == null) {
+      statusColor = Colors.orange;
+      statusText = "En attente SMS";
+      statusIcon = LucideIcons.clock;
+    } else if (sms.montant == tx.montant) {
+      statusColor = Colors.green;
+      statusText = "Confirmé";
+      statusIcon = LucideIcons.checkCircle2;
+    } else {
+      statusColor = Colors.red;
+      statusText = "Incohérence";
+      statusIcon = LucideIcons.alertTriangle;
+    }
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LogDetailView(transaction: tx, sms: sms, opColor: opColor,),
           ),
-          const SizedBox(width: 16),
-
-          // --- Contenu ---
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Timeline colorée selon le statut
+            Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      source,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(time, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  action,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isWarning ? Colors.orange : theme.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: isDark ? theme.cardColor : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: theme.dividerColor.withOpacity(0.05),
-                    ),
-                  ),
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                    ),
-                  ),
+                  width: 16, height: 16,
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                  child: Icon(statusIcon, size: 10, color: Colors.white),
                 ),
-                const SizedBox(height: 20),
+                if (!isLast)
+                  Container(width: 2, height: 90, color: theme.dividerColor.withOpacity(0.1)),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(tx.operateur.name.toUpperCase(),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: opColor)), // Couleur Opérateur
+                      Text(_formatTimestamp(tx.horodatage), style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      // Bordure utilisant la couleur de la PUCE
+                      border: Border.all(color: opColor.withOpacity(0.3), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: opColor.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Réf: ${tx.reference}", style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(CurrencyFormatter.format(tx.montant),
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                            Icon(LucideIcons.chevronRight, size: 14, color: theme.dividerColor),
+                          ],
+                        ),
+                        if (sms != null && sms.montant != tx.montant)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text("⚠️ SMS indique: ${CurrencyFormatter.format(sms.montant)}",
+                                style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime date) {
+    final difference = DateTime.now().difference(date);
+    if (difference.inMinutes < 60) return "Il y a ${difference.inMinutes} min";
+    if (difference.inHours < 24) return "Il y a ${difference.inHours} h";
+    return DateFormat('dd MMM, HH:mm', 'fr').format(date);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart'; // Pour les SMS
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
@@ -10,6 +10,7 @@ import 'views/splash_screen.dart';
 void main() async {
   // Indispensable pour initialiser les plugins natifs (SQLite, SMS)
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
 
   // 1. Créer le container unique pour accéder aux services avant le runApp
   final container = ProviderContainer();

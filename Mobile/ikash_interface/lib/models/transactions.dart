@@ -10,6 +10,7 @@ class Transactions extends Table {
   IntColumn get operateur => intEnum<OperatorType>()();
   IntColumn get type => intEnum<TransactionType>()();
   RealColumn get montant => real()();
+  // Si tu veux que "reussi" soit le statut par défaut :
   IntColumn get statut => intEnum<TransactionStatus>().withDefault(
     Constant(TransactionStatus.reussi.index),
   )();
@@ -23,6 +24,7 @@ class Transactions extends Table {
   // Le bénéfice net (Frais Client - Frais Opérateur)
   RealColumn get bonus => real().withDefault(const Constant(0.0))();
   TextColumn get numeroClient => text().nullable()();
+  TextColumn get commission => text().withDefault(const Constant('0.0'))();
   // On ajoute NOT NULL explicitement dans la contrainte
   TextColumn get reference => text().customConstraint('UNIQUE NOT NULL')();
   BoolColumn get estSaisieManuelle =>

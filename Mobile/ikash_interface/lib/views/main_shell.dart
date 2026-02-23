@@ -129,7 +129,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  Widget _buildModernDrawer(BuildContext context, user, ThemeData theme, bool isAdmin) {
+  Widget _buildModernDrawer(
+    BuildContext context,
+    user,
+    ThemeData theme,
+    bool isAdmin,
+  ) {
     return Drawer(
       child: Column(
         children: [
@@ -169,10 +174,14 @@ class _MainShellState extends ConsumerState<MainShell> {
           ListTile(
             leading: Icon(
               isAdmin ? LucideIcons.database : LucideIcons.list,
-              color: Colors.orange
+              color: Colors.orange,
             ),
             title: const Text("Grille Tarifaire"),
-            subtitle: Text(isAdmin ? "Consulter et modifier les tarifs" : "Consulter les frais de transaction"),
+            subtitle: Text(
+              isAdmin
+                  ? "Consulter et modifier les tarifs"
+                  : "Consulter les frais de transaction",
+            ),
             onTap: () {
               Navigator.pop(context); // Ferme le drawer
               Navigator.push(

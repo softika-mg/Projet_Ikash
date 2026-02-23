@@ -19,6 +19,11 @@ class TransactionController {
     return await db.select(db.agentNumbers).get();
   }
 
+  // --- AJOUTE CETTE MÉTHODE POUR LE FLUX TEMPS RÉEL (Erreur corrigée) ---
+  Stream<List<AgentNumber>> watchAllAgentNumbers() {
+    return db.select(db.agentNumbers).watch();
+  }
+
   /// Enregistre une transaction, met à jour le solde global ET le solde de la puce utilisée
   Future<void> saveTransaction(TransactionsCompanion entry) async {
     final profile = ref.read(currentUserProvider);

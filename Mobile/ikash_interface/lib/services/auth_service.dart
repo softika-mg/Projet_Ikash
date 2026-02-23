@@ -52,7 +52,6 @@ class AuthService {
               role: const Value(RoleType.agent),
             ),
           );
-
     }
     await db.seedTarifsInitiaux();
   }
@@ -91,4 +90,20 @@ final authServiceProvider = Provider((ref) {
 final allPendingSmsProvider = StreamProvider<List<SmsReceivedData>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchAllPendingSms();
+});
+final currentAgentIdProvider = Provider<int>((ref) {
+  final profile = ref.watch(currentUserProvider);
+  // Si pas de profil (déconnecté), on retourne 0 ou un ID invalide
+  return profile?.id ?? 0;
+});
+
+// 2. On branche les puces sur cet ID
+final allPucesProvider = StreamProvider<List<AgentNumber>>((ref) {
+  final db = ref.watch(databaseProvider);
+  final agentId = ref.watch(currentAgentIdProvider);
+
+  // Si l'agent est 0 (non connecté), on retourne une liste vide
+  if (agentId == 0) return Stream.value([]);
+
+  return db.watchAgentNumbers(agentId);
 });

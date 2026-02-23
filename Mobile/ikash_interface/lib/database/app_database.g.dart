@@ -989,6 +989,18 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _commissionMeta = const VerificationMeta(
+    'commission',
+  );
+  @override
+  late final GeneratedColumn<String> commission = GeneratedColumn<String>(
+    'commission',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0.0'),
+  );
   static const VerificationMeta _referenceMeta = const VerificationMeta(
     'reference',
   );
@@ -1057,6 +1069,7 @@ class $TransactionsTable extends Transactions
     fraisClient,
     bonus,
     numeroClient,
+    commission,
     reference,
     estSaisieManuelle,
     agentId,
@@ -1128,6 +1141,12 @@ class $TransactionsTable extends Transactions
           data['numero_client']!,
           _numeroClientMeta,
         ),
+      );
+    }
+    if (data.containsKey('commission')) {
+      context.handle(
+        _commissionMeta,
+        commission.isAcceptableOrUnknown(data['commission']!, _commissionMeta),
       );
     }
     if (data.containsKey('reference')) {
@@ -1223,6 +1242,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}numero_client'],
       ),
+      commission: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}commission'],
+      )!,
       reference: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}reference'],
@@ -1267,6 +1290,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final double fraisClient;
   final double bonus;
   final String? numeroClient;
+  final String commission;
   final String reference;
   final bool estSaisieManuelle;
   final int agentId;
@@ -1283,6 +1307,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.fraisClient,
     required this.bonus,
     this.numeroClient,
+    required this.commission,
     required this.reference,
     required this.estSaisieManuelle,
     required this.agentId,
@@ -1318,6 +1343,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || numeroClient != null) {
       map['numero_client'] = Variable<String>(numeroClient);
     }
+    map['commission'] = Variable<String>(commission);
     map['reference'] = Variable<String>(reference);
     map['est_saisie_manuelle'] = Variable<bool>(estSaisieManuelle);
     map['agent_id'] = Variable<int>(agentId);
@@ -1344,6 +1370,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       numeroClient: numeroClient == null && nullToAbsent
           ? const Value.absent()
           : Value(numeroClient),
+      commission: Value(commission),
       reference: Value(reference),
       estSaisieManuelle: Value(estSaisieManuelle),
       agentId: Value(agentId),
@@ -1376,6 +1403,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       fraisClient: serializer.fromJson<double>(json['fraisClient']),
       bonus: serializer.fromJson<double>(json['bonus']),
       numeroClient: serializer.fromJson<String?>(json['numeroClient']),
+      commission: serializer.fromJson<String>(json['commission']),
       reference: serializer.fromJson<String>(json['reference']),
       estSaisieManuelle: serializer.fromJson<bool>(json['estSaisieManuelle']),
       agentId: serializer.fromJson<int>(json['agentId']),
@@ -1403,6 +1431,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'fraisClient': serializer.toJson<double>(fraisClient),
       'bonus': serializer.toJson<double>(bonus),
       'numeroClient': serializer.toJson<String?>(numeroClient),
+      'commission': serializer.toJson<String>(commission),
       'reference': serializer.toJson<String>(reference),
       'estSaisieManuelle': serializer.toJson<bool>(estSaisieManuelle),
       'agentId': serializer.toJson<int>(agentId),
@@ -1422,6 +1451,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     double? fraisClient,
     double? bonus,
     Value<String?> numeroClient = const Value.absent(),
+    String? commission,
     String? reference,
     bool? estSaisieManuelle,
     int? agentId,
@@ -1438,6 +1468,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     fraisClient: fraisClient ?? this.fraisClient,
     bonus: bonus ?? this.bonus,
     numeroClient: numeroClient.present ? numeroClient.value : this.numeroClient,
+    commission: commission ?? this.commission,
     reference: reference ?? this.reference,
     estSaisieManuelle: estSaisieManuelle ?? this.estSaisieManuelle,
     agentId: agentId ?? this.agentId,
@@ -1466,6 +1497,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       numeroClient: data.numeroClient.present
           ? data.numeroClient.value
           : this.numeroClient,
+      commission: data.commission.present
+          ? data.commission.value
+          : this.commission,
       reference: data.reference.present ? data.reference.value : this.reference,
       estSaisieManuelle: data.estSaisieManuelle.present
           ? data.estSaisieManuelle.value
@@ -1491,6 +1525,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('fraisClient: $fraisClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
+          ..write('commission: $commission, ')
           ..write('reference: $reference, ')
           ..write('estSaisieManuelle: $estSaisieManuelle, ')
           ..write('agentId: $agentId, ')
@@ -1512,6 +1547,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     fraisClient,
     bonus,
     numeroClient,
+    commission,
     reference,
     estSaisieManuelle,
     agentId,
@@ -1532,6 +1568,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.fraisClient == this.fraisClient &&
           other.bonus == this.bonus &&
           other.numeroClient == this.numeroClient &&
+          other.commission == this.commission &&
           other.reference == this.reference &&
           other.estSaisieManuelle == this.estSaisieManuelle &&
           other.agentId == this.agentId &&
@@ -1550,6 +1587,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<double> fraisClient;
   final Value<double> bonus;
   final Value<String?> numeroClient;
+  final Value<String> commission;
   final Value<String> reference;
   final Value<bool> estSaisieManuelle;
   final Value<int> agentId;
@@ -1566,6 +1604,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.fraisClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
+    this.commission = const Value.absent(),
     this.reference = const Value.absent(),
     this.estSaisieManuelle = const Value.absent(),
     this.agentId = const Value.absent(),
@@ -1583,6 +1622,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.fraisClient = const Value.absent(),
     this.bonus = const Value.absent(),
     this.numeroClient = const Value.absent(),
+    this.commission = const Value.absent(),
     required String reference,
     this.estSaisieManuelle = const Value.absent(),
     required int agentId,
@@ -1604,6 +1644,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<double>? fraisClient,
     Expression<double>? bonus,
     Expression<String>? numeroClient,
+    Expression<String>? commission,
     Expression<String>? reference,
     Expression<bool>? estSaisieManuelle,
     Expression<int>? agentId,
@@ -1621,6 +1662,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (fraisClient != null) 'frais_client': fraisClient,
       if (bonus != null) 'bonus': bonus,
       if (numeroClient != null) 'numero_client': numeroClient,
+      if (commission != null) 'commission': commission,
       if (reference != null) 'reference': reference,
       if (estSaisieManuelle != null) 'est_saisie_manuelle': estSaisieManuelle,
       if (agentId != null) 'agent_id': agentId,
@@ -1640,6 +1682,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<double>? fraisClient,
     Value<double>? bonus,
     Value<String?>? numeroClient,
+    Value<String>? commission,
     Value<String>? reference,
     Value<bool>? estSaisieManuelle,
     Value<int>? agentId,
@@ -1657,6 +1700,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       fraisClient: fraisClient ?? this.fraisClient,
       bonus: bonus ?? this.bonus,
       numeroClient: numeroClient ?? this.numeroClient,
+      commission: commission ?? this.commission,
       reference: reference ?? this.reference,
       estSaisieManuelle: estSaisieManuelle ?? this.estSaisieManuelle,
       agentId: agentId ?? this.agentId,
@@ -1706,6 +1750,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (numeroClient.present) {
       map['numero_client'] = Variable<String>(numeroClient.value);
     }
+    if (commission.present) {
+      map['commission'] = Variable<String>(commission.value);
+    }
     if (reference.present) {
       map['reference'] = Variable<String>(reference.value);
     }
@@ -1735,6 +1782,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('fraisClient: $fraisClient, ')
           ..write('bonus: $bonus, ')
           ..write('numeroClient: $numeroClient, ')
+          ..write('commission: $commission, ')
           ..write('reference: $reference, ')
           ..write('estSaisieManuelle: $estSaisieManuelle, ')
           ..write('agentId: $agentId, ')
@@ -4508,6 +4556,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<double> fraisClient,
       Value<double> bonus,
       Value<String?> numeroClient,
+      Value<String> commission,
       required String reference,
       Value<bool> estSaisieManuelle,
       required int agentId,
@@ -4526,6 +4575,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<double> fraisClient,
       Value<double> bonus,
       Value<String?> numeroClient,
+      Value<String> commission,
       Value<String> reference,
       Value<bool> estSaisieManuelle,
       Value<int> agentId,
@@ -4639,6 +4689,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get numeroClient => $composableBuilder(
     column: $table.numeroClient,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get commission => $composableBuilder(
+    column: $table.commission,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4763,6 +4818,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get commission => $composableBuilder(
+    column: $table.commission,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get reference => $composableBuilder(
     column: $table.reference,
     builder: (column) => ColumnOrderings(column),
@@ -4870,6 +4930,11 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get commission => $composableBuilder(
+    column: $table.commission,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get reference =>
       $composableBuilder(column: $table.reference, builder: (column) => column);
 
@@ -4964,6 +5029,7 @@ class $$TransactionsTableTableManager
                 Value<double> fraisClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
+                Value<String> commission = const Value.absent(),
                 Value<String> reference = const Value.absent(),
                 Value<bool> estSaisieManuelle = const Value.absent(),
                 Value<int> agentId = const Value.absent(),
@@ -4980,6 +5046,7 @@ class $$TransactionsTableTableManager
                 fraisClient: fraisClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
+                commission: commission,
                 reference: reference,
                 estSaisieManuelle: estSaisieManuelle,
                 agentId: agentId,
@@ -4998,6 +5065,7 @@ class $$TransactionsTableTableManager
                 Value<double> fraisClient = const Value.absent(),
                 Value<double> bonus = const Value.absent(),
                 Value<String?> numeroClient = const Value.absent(),
+                Value<String> commission = const Value.absent(),
                 required String reference,
                 Value<bool> estSaisieManuelle = const Value.absent(),
                 required int agentId,
@@ -5014,6 +5082,7 @@ class $$TransactionsTableTableManager
                 fraisClient: fraisClient,
                 bonus: bonus,
                 numeroClient: numeroClient,
+                commission: commission,
                 reference: reference,
                 estSaisieManuelle: estSaisieManuelle,
                 agentId: agentId,

@@ -10,7 +10,7 @@ import '../services/tarif_service.dart';
 import '../database/app_database.dart';
 import 'package:local_auth/local_auth.dart'; // Pour l'empreinte
 import '../services/auth_service.dart'; // Pour récupérer le rôle
-
+import '../providers/agent_number_provider.dart'; // Pour les puces
 
 class TarifAdminScreen extends ConsumerWidget {
   const TarifAdminScreen({super.key});
@@ -20,14 +20,18 @@ class TarifAdminScreen extends ConsumerWidget {
   Future<bool> _verifierEmpreinte() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
 
-      if (!canAuthenticate) return true; // On laisse passer si le tel n'a pas de biométrie
+      if (!canAuthenticate)
+        return true; // On laisse passer si le tel n'a pas de biométrie
 
       return await _auth.authenticate(
         localizedReason: 'Veuillez vous authentifier pour modifier les tarifs',
-        options: const AuthenticationOptions(stickyAuth: true, biometricOnly: true),
-
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
       );
     } catch (e) {
       return false;
@@ -36,11 +40,12 @@ class TarifAdminScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-  	final user = ref.watch(currentUserProvider);
+    final user = ref.watch(currentUserProvider);
     final bool isAdmin = user?.role == RoleType.admin;
     final tarifsAsync = ref.watch(tarifsStreamProvider);
     final formatter = NumberFormat("#,###", "fr_FR");
     final theme = Theme.of(context);
+    final puces = ref.watch(agentNumbersStreamProvider(1)).value ?? [];
 
     return Scaffold(
       appBar: AppBar(
@@ -54,46 +59,66 @@ class TarifAdminScreen extends ConsumerWidget {
           itemBuilder: (context, index) {
             final t = liste[index];
             final profit = t.fraisClient - t.fraisOperateur;
+            final color = _getDynamicOpColor(t.operateur, puces);
 
             return Card(
               elevation: 2,
               margin: const EdgeInsets.symmetric(vertical: 6),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: _getOpColor(t.operateur),
-                  child: Text(t.operateur.name[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white)),
+                  backgroundColor: color,
+                  child: Text(
+                    t.operateur.name[0].toUpperCase(),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-                title: Text("${formatter.format(t.montantMin)} - ${formatter.format(t.montantMax)} Ar"),
+                title: Text(
+                  "${formatter.format(t.montantMin)} - ${formatter.format(t.montantMax)} Ar",
+                ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text("Frais Client: ${formatter.format(t.fraisClient)} Ar"),
-                    if (isAdmin) Text("Com. Opérateur: ${formatter.format(t.fraisOperateur)} Ar"),
+                    if (isAdmin)
+                      Text(
+                        "Com. Opérateur: ${formatter.format(t.fraisOperateur)} Ar",
+                      ),
                   ],
                 ),
                 trailing: isAdmin
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("${formatter.format(profit)} Ar",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                    const Text("Gain", style: TextStyle(fontSize: 10)),
-                  ],
-                )
-                : Icon(Icons.info_outline, color: theme.primaryColor.withOpacity(0.5)),
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "${formatter.format(profit)} Ar",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const Text("Gain", style: TextStyle(fontSize: 10)),
+                        ],
+                      )
+                    : Icon(
+                        Icons.info_outline,
+                        color: theme.primaryColor.withOpacity(0.5),
+                      ),
 
                 // --- PROTECTION ICI ---
-                onTap: isAdmin ? () async {
-                  if (await _verifierEmpreinte()) {
-                    _showEditDialog(context, ref, t);
-                  }
-                } : null,
-                onLongPress: isAdmin ? () async {
-                   if (await _verifierEmpreinte()) {
-                    _confirmDelete(context, ref, t);
-                  }
-                } : null,
+                onTap: isAdmin
+                    ? () async {
+                        if (await _verifierEmpreinte()) {
+                          _showEditDialog(context, ref, t);
+                        }
+                      }
+                    : null,
+                onLongPress: isAdmin
+                    ? () async {
+                        if (await _verifierEmpreinte()) {
+                          _confirmDelete(context, ref, t);
+                        }
+                      }
+                    : null,
               ),
             );
           },
@@ -103,148 +128,198 @@ class TarifAdminScreen extends ConsumerWidget {
       ),
 
       // Seul l'admin voit le bouton d'ajout
-      floatingActionButton: isAdmin ? FloatingActionButton.extended(
-        onPressed: () async {
-          if (await _verifierEmpreinte()) {
-            _showEditDialog(context, ref, null);
-          }
-        },
-        label: const Text("Ajouter"),
-        icon: const Icon(Icons.add),
-      ) : null,
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                if (await _verifierEmpreinte()) {
+                  _showEditDialog(context, ref, null);
+                }
+              },
+              label: const Text("Ajouter"),
+              icon: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
-  Color _getOpColor(OperatorType op) {
+  Color _getDynamicOpColor(OperatorType op, List<AgentNumber> puces) {
+    try {
+      // On cherche si une puce existe pour cet opérateur
+      final puce = puces.firstWhere((p) => p.operateur == op);
+      if (puce.color != null && puce.color!.isNotEmpty) {
+        return Color(int.parse(puce.color!));
+      }
+    } catch (_) {
+      // Si pas de puce, on utilise ton switch habituel
+    }
+
+    // Tes couleurs par défaut (Fallback)
     switch (op) {
-      case OperatorType.telma: return Colors.yellow.shade800;
-      case OperatorType.orange: return Colors.orange.shade900;
-      case OperatorType.airtel: return Colors.red.shade900;
-      default: return Colors.blueGrey;
+      case OperatorType.telma:
+        return Colors.yellow.shade800;
+      case OperatorType.orange:
+        return Colors.orange.shade900;
+      case OperatorType.airtel:
+        return Colors.red.shade900;
+      default:
+        return Colors.blueGrey;
     }
   }
+
   void _showEditDialog(BuildContext context, WidgetRef ref, TarifData? tarif) {
-  final formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
 
-  // Si tarif est null, on est en mode "Ajout", sinon "Modification"
-  final minController = TextEditingController(text: tarif?.montantMin.toString() ?? '');
-  final maxController = TextEditingController(text: tarif?.montantMax.toString() ?? '');
-  final fraisOpController = TextEditingController(text: tarif?.fraisOperateur.toString() ?? '');
-  final fraisCliController = TextEditingController(text: tarif?.fraisClient.toString() ?? '');
+    // Si tarif est null, on est en mode "Ajout", sinon "Modification"
+    final minController = TextEditingController(
+      text: tarif?.montantMin.toString() ?? '',
+    );
+    final maxController = TextEditingController(
+      text: tarif?.montantMax.toString() ?? '',
+    );
+    final fraisOpController = TextEditingController(
+      text: tarif?.fraisOperateur.toString() ?? '',
+    );
+    final fraisCliController = TextEditingController(
+      text: tarif?.fraisClient.toString() ?? '',
+    );
 
-  OperatorType selectedOp = tarif?.operateur ?? OperatorType.telma; // Valeur par défaut si ajout
+    OperatorType selectedOp =
+        tarif?.operateur ?? OperatorType.telma; // Valeur par défaut si ajout
 
-
-
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(tarif == null ? "Ajouter un Tarif" : "Modifier le Tarif"),
-      content: SingleChildScrollView(
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Sélecteur d'opérateur
-              DropdownButtonFormField<OperatorType>(
-                value: selectedOp,
-                decoration: const InputDecoration(labelText: "Opérateur"),
-                items: OperatorType.values.map((op) => DropdownMenuItem(
-                  value: op,
-                  child: Text(op.name.toUpperCase()),
-                )).toList(),
-                onChanged: (val) => selectedOp = val!,
-              ),
-              const SizedBox(height: 15),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: minController,
-                      decoration: const InputDecoration(labelText: "Montant Min", suffixText: "Ar"),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => v!.isEmpty ? "Requis" : null,
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(tarif == null ? "Ajouter un Tarif" : "Modifier le Tarif"),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sélecteur d'opérateur
+                DropdownButtonFormField<OperatorType>(
+                  value: selectedOp,
+                  decoration: const InputDecoration(labelText: "Opérateur"),
+                  items: OperatorType.values
+                      .map(
+                        (op) => DropdownMenuItem(
+                          value: op,
+                          child: Text(op.name.toUpperCase()),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => selectedOp = val!,
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: minController,
+                        decoration: const InputDecoration(
+                          labelText: "Montant Min",
+                          suffixText: "Ar",
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "Requis" : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: maxController,
-                      decoration: const InputDecoration(labelText: "Montant Max", suffixText: "Ar"),
-                      keyboardType: TextInputType.number,
-                      validator: (v) => v!.isEmpty ? "Requis" : null,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: maxController,
+                        decoration: const InputDecoration(
+                          labelText: "Montant Max",
+                          suffixText: "Ar",
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v!.isEmpty ? "Requis" : null,
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: fraisCliController,
+                  decoration: const InputDecoration(
+                    labelText: "Frais payés par le Client",
+                    suffixText: "Ar",
                   ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: fraisCliController,
-                decoration: const InputDecoration(labelText: "Frais payés par le Client", suffixText: "Ar"),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? "Requis" : null,
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: fraisOpController,
-                decoration: const InputDecoration(labelText: "Frais pris par l'Opérateur", suffixText: "Ar"),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? "Requis" : null,
-              ),
-            ],
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? "Requis" : null,
+                ),
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: fraisOpController,
+                  decoration: const InputDecoration(
+                    labelText: "Frais pris par l'Opérateur",
+                    suffixText: "Ar",
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? "Requis" : null,
+                ),
+              ],
+            ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                // Création de l'objet Companion pour Drift
+                final entry = TarifsCompanion(
+                  id: tarif == null ? const Value.absent() : Value(tarif.id),
+                  operateur: Value(selectedOp),
+                  montantMin: Value(double.parse(minController.text)),
+                  montantMax: Value(double.parse(maxController.text)),
+                  fraisOperateur: Value(double.parse(fraisOpController.text)),
+                  fraisClient: Value(double.parse(fraisCliController.text)),
+                  derniereMaj: Value(DateTime.now()),
+                );
+
+                await ref.read(tarifServiceProvider).upsertTarif(entry);
+                if (ctx.mounted) Navigator.pop(ctx);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Tarif enregistré !"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text("Enregistrer"),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annuler")),
-        ElevatedButton(
-          onPressed: () async {
-            if (formKey.currentState!.validate()) {
-              // Création de l'objet Companion pour Drift
-              final entry = TarifsCompanion(
-                id: tarif == null ? const Value.absent() : Value(tarif.id),
-                operateur: Value(selectedOp),
-                montantMin: Value(double.parse(minController.text)),
-                montantMax: Value(double.parse(maxController.text)),
-                fraisOperateur: Value(double.parse(fraisOpController.text)),
-                fraisClient: Value(double.parse(fraisCliController.text)),
-                derniereMaj: Value(DateTime.now()),
-              );
-
-              await ref.read(tarifServiceProvider).upsertTarif(entry);
-              if (ctx.mounted) Navigator.pop(ctx);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Tarif enregistré !"), backgroundColor: Colors.green),
-              );
-            }
-          },
-          child: const Text("Enregistrer"),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   // --- LOGIQUE DIALOGUE ---
   void _confirmDelete(BuildContext context, WidgetRef ref, TarifData t) {
-     showDialog(
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Supprimer ?"),
         content: const Text("Voulez-vous vraiment supprimer cette tranche ?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annuler")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Annuler"),
+          ),
           TextButton(
             onPressed: () {
               ref.read(tarifServiceProvider).supprimerTarif(t.id);
               Navigator.pop(ctx);
             },
-            child: const Text("Supprimer", style: TextStyle(color: Colors.red))
+            child: const Text("Supprimer", style: TextStyle(color: Colors.red)),
           ),
         ],
-      )
+      ),
     );
   }
 }

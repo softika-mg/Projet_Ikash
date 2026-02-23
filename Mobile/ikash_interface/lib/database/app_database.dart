@@ -66,8 +66,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // Pour le Dashboard : Voir les transactions en temps réel
-  Stream<List<Transaction>> watchAllTransactions() =>
-      select(transactions).watch();
+  // Pour le Dashboard et les Logs : Voir les transactions du plus récent au plus ancien
+// Pour les Transactions
+Stream<List<Transaction>> watchAllTransactions() {
+  return (select(transactions)
+        ..orderBy([(t) => OrderingTerm.desc(t.horodatage)])) // Syntaxe directe .desc()
+      .watch();
+}
 
   // Ajouter une transaction (SMS parsé)
   Future<int> addTransaction(TransactionsCompanion entry) =>
@@ -80,12 +85,55 @@ class AppDatabase extends _$AppDatabase {
         .map((list) => list.length);
   }
 
+  // Surveillance en temps réel de TOUTES les puces (utile pour le UI dynamique)
+  Stream<List<AgentNumber>> watchAllAgentNumbers() {
+    return select(agentNumbers).watch();
+  }
+
+  // Récupération ponctuelle de TOUTES les puces (pour ton handleSave)
+  Future<List<AgentNumber>> getAllAgentNumbers() {
+    return select(agentNumbers).get();
+  }
+
+  // Dans ta classe AppDatabase
+  Future<void> repairMissingAgentLinks() async {
+    final allTx = await select(transactions).get();
+    final allPuces = await getAllAgentNumbers();
+
+    for (var tx in allTx) {
+      if (tx.agentNumberId == null) {
+        try {
+          // On cherche la puce qui a le même opérateur que la transaction
+          final correctPuce = allPuces.firstWhere(
+            (p) => p.operateur == tx.operateur,
+          );
+
+          // On met à jour la transaction avec l'ID de cette puce
+          await (update(transactions)..where((t) => t.id.equals(tx.id))).write(
+            TransactionsCompanion(agentNumberId: Value(correctPuce.id)),
+          );
+
+          print("Lien réparé pour la transaction ${tx.reference}");
+        } catch (e) {
+          print(
+            "Impossible de réparer ${tx.reference} : aucune puce trouvée pour cet opérateur",
+          );
+        }
+      }
+    }
+  }
+
   // Dans ta classe AppDatabase
   Stream<List<SmsReceivedData>> watchAllPendingSms() {
     return (select(
       smsReceived,
     )..where((t) => t.estTraite.equals(false))).watch();
   }
+  Stream<List<SmsReceivedData>> watchAllSms() {
+  return (select(smsReceived)
+        ..orderBy([(t) => OrderingTerm.desc(t.dateReception)])) // Syntaxe directe .desc()
+      .watch();
+}
 
   // 1. Service pour surveiller les puces d'un agent en temps réel (Stream)
   Stream<List<AgentNumber>> watchAgentNumbers(int profileId) {

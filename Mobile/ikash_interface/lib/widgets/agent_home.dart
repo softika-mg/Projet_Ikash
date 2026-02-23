@@ -24,6 +24,7 @@ class AgentHome extends ConsumerWidget {
 
     final transactionsStream = db.watchAllTransactions();
     final pucesStream = db.watchAgentNumbers(1);
+    final puces = ref.watch(agentNumbersStreamProvider).value ?? [];
 
     return StreamBuilder<List<Transaction>>(
       stream: transactionsStream,
@@ -131,7 +132,7 @@ class AgentHome extends ConsumerWidget {
               else
                 ...transactions
                     .take(5)
-                    .map((tx) => _buildHistoryLine(tx, theme))
+                    .map((tx) => _buildHistoryLine(tx, theme, puces))
                     .toList(),
             ],
           ),
@@ -204,7 +205,12 @@ class AgentHome extends ConsumerWidget {
   }
 
   Widget _buildMiniPuceCard(AgentNumber puce, ThemeData theme) {
-    Color color = _getOpColor(puce.operateur);
+    // 1. On récupère la valeur String et on essaie de la transformer en entier
+    // 2. Si c'est nul ou invalide, on met une couleur par défaut (ex: Gris)
+    final colorValue = int.tryParse(puce.color ?? "");
+    final Color color = colorValue != null
+        ? Color(colorValue)
+        : Colors.grey; // Couleur de secours
     return Container(
       width: 150,
       margin: const EdgeInsets.only(right: 12, bottom: 5),
@@ -251,9 +257,28 @@ class AgentHome extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryLine(Transaction tx, ThemeData theme) {
+  Widget _buildHistoryLine(
+    Transaction tx,
+    ThemeData theme,
+    List<AgentNumber> puces,
+  ) {
     final bool isRetrait = tx.type == TransactionType.retrait;
-    final Color opColor = _getOpColor(tx.operateur);
+    Color opColor;
+
+    try {
+      // LOGIQUE ROBUSTE : On cherche par Opérateur plutôt que par ID
+      // Cela garantit que même les transactions avec agentNumberId = null sont colorées
+      final puceIdoine = puces.firstWhere((p) => p.operateur == tx.operateur);
+
+      if (puceIdoine.color != null && puceIdoine.color!.isNotEmpty) {
+        opColor = Color(int.parse(puceIdoine.color!));
+      } else {
+        opColor = _getOpColor(tx.operateur); // Fallback si couleur vide
+      }
+    } catch (e) {
+      // Si aucune puce n'est configurée pour cet opérateur, on utilise le fallback
+      opColor = _getOpColor(tx.operateur);
+    }
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -266,7 +291,7 @@ class AgentHome extends ConsumerWidget {
         ),
       ),
       title: Text(
-        tx.nomClient ?? tx.reference,
+        tx.nomClient?.isNotEmpty == true ? tx.nomClient! : tx.reference,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

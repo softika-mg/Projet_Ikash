@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:drift/drift.dart' as d;
 
 // Services et Providers
 import '../services/auth_service.dart';
@@ -94,14 +95,8 @@ class SettingsView extends ConsumerWidget {
           ListTile(
             leading: const Icon(LucideIcons.lock),
             title: const Text("Changer le code PIN"),
-            subtitle: const Text("Sécuriser l'accès à vos comptes"),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Fonctionnalité bientôt disponible"),
-                ),
-              );
-            },
+            subtitle: const Text("Sécuriser l'accès à votre compte"),
+            onTap: () => _showChangePinDialog(context, ref),
           ),
 
           // --- SECTION DONNÉES (Seulement pour Admin) ---
@@ -154,6 +149,132 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePinDialog(BuildContext context, WidgetRef ref) {
+    final _oldPinController = TextEditingController();
+    final _newPinController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
+    final db = ref.read(databaseProvider);
+    final currentUser = ref.read(currentUserProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(LucideIcons.shieldCheck, color: Colors.blue),
+            SizedBox(width: 10),
+            Text("Nouveau code PIN"),
+          ],
+        ),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "L'ancien code est requis pour valider le changement.",
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              // Ancien PIN
+              TextFormField(
+                controller: _oldPinController,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                decoration: InputDecoration(
+                  labelText: "Ancien PIN",
+                  prefixIcon: const Icon(LucideIcons.key),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (v) => (v != currentUser?.codePin)
+                    ? "Code actuel incorrect"
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              // Nouveau PIN
+              TextFormField(
+                controller: _newPinController,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                decoration: InputDecoration(
+                  labelText: "Nouveau PIN (4 chiffres)",
+                  prefixIcon: const Icon(LucideIcons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (v) {
+                  if (v == null || v.length != 4)
+                    return "Doit contenir 4 chiffres";
+                  if (v == _oldPinController.text)
+                    return "Le nouveau doit être différent";
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                try {
+                  // Mise à jour en base de données via Drift
+                  await (db.update(
+                    db.profiles,
+                  )..where((t) => t.id.equals(currentUser!.id))).write(
+                    ProfilesCompanion(codePin: d.Value(_newPinController.text)),
+                  );
+
+                  // Mettre à jour le provider de l'utilisateur actuel
+                  final updatedUser = await (db.select(
+                    db.profiles,
+                  )..where((t) => t.id.equals(currentUser!.id))).getSingle();
+
+                  ref.read(currentUserProvider.notifier).setUser(updatedUser);
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    _showStatus(
+                      context,
+                      "Succès",
+                      "Votre code PIN a été mis à jour avec succès.",
+                      false,
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    _showStatus(
+                      context,
+                      "Erreur",
+                      "Impossible de changer le PIN : $e",
+                      true,
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text("Mettre à jour"),
+          ),
         ],
       ),
     );
