@@ -33,9 +33,14 @@ class AdminDashboard extends ConsumerWidget {
     final pucesAsync = ref.watch(allPucesProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.grey.shade50,
+      backgroundColor: isDark
+          ? theme.scaffoldBackgroundColor
+          : Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text("Tableau de Bord Admin", style: TextStyle(fontWeight: FontWeight.w900)),
+        title: const Text(
+          "Tableau de Bord Admin",
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -56,19 +61,25 @@ class AdminDashboard extends ConsumerWidget {
               // --- CALCULS ---
               double volumeTotal = 0;
               final Map<OperatorType, double> volumeParPuce = {};
-              for (var p in listePuces) { volumeParPuce[p.operateur] = 0.0; }
+              for (var p in listePuces) {
+                volumeParPuce[p.operateur] = 0.0;
+              }
 
               for (var tx in transactions) {
                 volumeTotal += tx.montant;
                 if (volumeParPuce.containsKey(tx.operateur)) {
-                  volumeParPuce[tx.operateur] = (volumeParPuce[tx.operateur] ?? 0) + tx.montant;
+                  volumeParPuce[tx.operateur] =
+                      (volumeParPuce[tx.operateur] ?? 0) + tx.montant;
                 }
               }
 
               return RefreshIndicator(
                 onRefresh: () async => ref.refresh(allPucesProvider),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -79,20 +90,28 @@ class AdminDashboard extends ConsumerWidget {
                             title: "Volume Global",
                             value: CurrencyFormatter.format(volumeTotal),
                             icon: LucideIcons.trendingUp,
-                            color: isDark ? Colors.indigo.shade400 : Colors.indigo.shade700,
+                            color: isDark
+                                ? Colors.indigo.shade400
+                                : Colors.indigo.shade700,
                           ),
                           const SizedBox(width: 15),
                           _buildSummaryCard(
                             title: "SIMs Actives",
                             value: "${listePuces.length}",
                             icon: LucideIcons.smartphone,
-                            color: isDark ? Colors.teal.shade600 : Colors.teal.shade700,
+                            color: isDark
+                                ? Colors.teal.shade600
+                                : Colors.teal.shade700,
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 30),
-                      _buildSectionHeader(theme, "État des Puces (SIM)", LucideIcons.layers),
+                      _buildSectionHeader(
+                        theme,
+                        "État des Puces (SIM)",
+                        LucideIcons.layers,
+                      ),
                       const SizedBox(height: 15),
 
                       // --- LISTE DES SIMS AVEC SOLDE ---
@@ -105,7 +124,8 @@ class AdminDashboard extends ConsumerWidget {
                           label: puce.numeroPuce,
                           subLabel: puce.operateur.name.toUpperCase(),
                           volume: volume,
-                          solde: puce.soldePuce, // Utilisation du solde de ta table AgentNumbers
+                          solde: puce
+                              .soldePuce, // Utilisation du solde de ta table AgentNumbers
                           color: color,
                         );
                       }),
@@ -113,7 +133,12 @@ class AdminDashboard extends ConsumerWidget {
                       const SizedBox(height: 30),
 
                       // --- RÉPARTITION ---
-                      _buildDistributionSection(theme, listePuces, volumeParPuce, volumeTotal),
+                      _buildDistributionSection(
+                        theme,
+                        listePuces,
+                        volumeParPuce,
+                        volumeTotal,
+                      ),
 
                       const SizedBox(height: 40),
                     ],
@@ -157,17 +182,34 @@ class AdminDashboard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(subLabel, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      subLabel,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(CurrencyFormatter.format(solde),
-                    style: TextStyle(fontWeight: FontWeight.w900, color: color)),
-                  const Text("Solde actuel", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text(
+                    CurrencyFormatter.format(solde),
+                    style: TextStyle(fontWeight: FontWeight.w900, color: color),
+                  ),
+                  const Text(
+                    "Solde actuel",
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
                 ],
               ),
             ],
@@ -176,11 +218,19 @@ class AdminDashboard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Volume traité", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              Text(CurrencyFormatter.format(volume),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              const Text(
+                "Volume traité",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+              Text(
+                CurrencyFormatter.format(volume),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -192,12 +242,22 @@ class AdminDashboard extends ConsumerWidget {
       children: [
         Icon(icon, size: 20, color: theme.primaryColor),
         const SizedBox(width: 10),
-        Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildDistributionSection(ThemeData theme, List<AgentNumber> puces, Map<OperatorType, double> volumes, double total) {
+  Widget _buildDistributionSection(
+    ThemeData theme,
+    List<AgentNumber> puces,
+    Map<OperatorType, double> volumes,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -207,40 +267,61 @@ class AdminDashboard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Parts de marché (Volume)", style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            "Parts de marché (Volume)",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 20),
-          if (total == 0) const Center(child: Text("Aucun volume"))
-          else ...puces.map((p) {
-            double percent = (volumes[p.operateur] ?? 0) / total;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(p.numeroPuce, style: const TextStyle(fontSize: 12)),
-                      Text("${(percent * 100).toInt()}%", style: TextStyle(color: _getParsedColor(p.color), fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: percent,
-                    backgroundColor: _getParsedColor(p.color).withOpacity(0.1),
-                    color: _getParsedColor(p.color),
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ],
-              ),
-            );
-          }),
+          if (total == 0)
+            const Center(child: Text("Aucun volume"))
+          else
+            ...puces.map((p) {
+              double percent = (volumes[p.operateur] ?? 0) / total;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 15),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          p.numeroPuce,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          "${(percent * 100).toInt()}%",
+                          style: TextStyle(
+                            color: _getParsedColor(p.color),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    LinearProgressIndicator(
+                      value: percent,
+                      backgroundColor: _getParsedColor(
+                        p.color,
+                      ).withOpacity(0.1),
+                      color: _getParsedColor(p.color),
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard({required String title, required String value, required IconData icon, required Color color}) {
+  Widget _buildSummaryCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -253,8 +334,20 @@ class AdminDashboard extends ConsumerWidget {
           children: [
             Icon(icon, color: Colors.white, size: 24),
             const SizedBox(height: 15),
-            FittedBox(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900))),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            FittedBox(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
           ],
         ),
       ),

@@ -67,12 +67,13 @@ class AppDatabase extends _$AppDatabase {
 
   // Pour le Dashboard : Voir les transactions en temps réel
   // Pour le Dashboard et les Logs : Voir les transactions du plus récent au plus ancien
-// Pour les Transactions
-Stream<List<Transaction>> watchAllTransactions() {
-  return (select(transactions)
-        ..orderBy([(t) => OrderingTerm.desc(t.horodatage)])) // Syntaxe directe .desc()
-      .watch();
-}
+  // Pour les Transactions
+  Stream<List<Transaction>> watchAllTransactions() {
+    return (select(transactions)..orderBy([
+          (t) => OrderingTerm.desc(t.horodatage),
+        ])) // Syntaxe directe .desc()
+        .watch();
+  }
 
   // Ajouter une transaction (SMS parsé)
   Future<int> addTransaction(TransactionsCompanion entry) =>
@@ -129,11 +130,13 @@ Stream<List<Transaction>> watchAllTransactions() {
       smsReceived,
     )..where((t) => t.estTraite.equals(false))).watch();
   }
+
   Stream<List<SmsReceivedData>> watchAllSms() {
-  return (select(smsReceived)
-        ..orderBy([(t) => OrderingTerm.desc(t.dateReception)])) // Syntaxe directe .desc()
-      .watch();
-}
+    return (select(smsReceived)..orderBy([
+          (t) => OrderingTerm.desc(t.dateReception),
+        ])) // Syntaxe directe .desc()
+        .watch();
+  }
 
   // 1. Service pour surveiller les puces d'un agent en temps réel (Stream)
   Stream<List<AgentNumber>> watchAgentNumbers(int profileId) {

@@ -34,7 +34,10 @@ class AdminLogsView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Vérification des Flux", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Vérification des Flux",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         elevation: 0,
       ),
@@ -45,10 +48,12 @@ class AdminLogsView extends ConsumerWidget {
           return StreamBuilder<List<Transaction>>(
             stream: db.watchAllTransactions(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              if (!snapshot.hasData)
+                return const Center(child: CircularProgressIndicator());
 
               final transactions = snapshot.data!;
-              if (transactions.isEmpty) return const Center(child: Text("Aucune activité"));
+              if (transactions.isEmpty)
+                return const Center(child: Text("Aucune activité"));
 
               return StreamBuilder<List<SmsReceivedData>>(
                 stream: db.watchAllSms(),
@@ -62,18 +67,24 @@ class AdminLogsView extends ConsumerWidget {
                       final tx = transactions[index];
 
                       // 1. Trouver la puce correspondante pour obtenir la couleur
-                      final puceAssociee = listePuces.cast<AgentNumber?>().firstWhere(
-                        (p) => p?.operateur == tx.operateur,
-                        orElse: () => null,
-                      );
+                      final puceAssociee = listePuces
+                          .cast<AgentNumber?>()
+                          .firstWhere(
+                            (p) => p?.operateur == tx.operateur,
+                            orElse: () => null,
+                          );
 
-                      final Color opColor = _getParsedColor(puceAssociee?.color);
+                      final Color opColor = _getParsedColor(
+                        puceAssociee?.color,
+                      );
 
                       // 2. Trouver le SMS correspondant
-                      final matchingSms = allSms.cast<SmsReceivedData?>().firstWhere(
-                        (s) => s?.reference == tx.reference,
-                        orElse: () => null,
-                      );
+                      final matchingSms = allSms
+                          .cast<SmsReceivedData?>()
+                          .firstWhere(
+                            (s) => s?.reference == tx.reference,
+                            orElse: () => null,
+                          );
 
                       return _buildEnhancedLogTile(
                         context: context,
@@ -125,7 +136,8 @@ class AdminLogsView extends ConsumerWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => LogDetailView(transaction: tx, sms: sms, opColor: opColor,),
+            builder: (context) =>
+                LogDetailView(transaction: tx, sms: sms, opColor: opColor),
           ),
         );
       },
@@ -138,12 +150,20 @@ class AdminLogsView extends ConsumerWidget {
             Column(
               children: [
                 Container(
-                  width: 16, height: 16,
-                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(statusIcon, size: 10, color: Colors.white),
                 ),
                 if (!isLast)
-                  Container(width: 2, height: 90, color: theme.dividerColor.withOpacity(0.1)),
+                  Container(
+                    width: 2,
+                    height: 90,
+                    color: theme.dividerColor.withOpacity(0.1),
+                  ),
               ],
             ),
             const SizedBox(width: 16),
@@ -154,13 +174,28 @@ class AdminLogsView extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(tx.operateur.name.toUpperCase(),
-                          style: TextStyle(fontWeight: FontWeight.bold, color: opColor)), // Couleur Opérateur
-                      Text(_formatTimestamp(tx.horodatage), style: theme.textTheme.bodySmall),
+                      Text(
+                        tx.operateur.name.toUpperCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: opColor,
+                        ),
+                      ), // Couleur Opérateur
+                      Text(
+                        _formatTimestamp(tx.horodatage),
+                        style: theme.textTheme.bodySmall,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -168,33 +203,57 @@ class AdminLogsView extends ConsumerWidget {
                       color: theme.cardColor,
                       borderRadius: BorderRadius.circular(12),
                       // Bordure utilisant la couleur de la PUCE
-                      border: Border.all(color: opColor.withOpacity(0.3), width: 1),
+                      border: Border.all(
+                        color: opColor.withOpacity(0.3),
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: opColor.withOpacity(0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Réf: ${tx.reference}", style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                        Text(
+                          "Réf: ${tx.reference}",
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(CurrencyFormatter.format(tx.montant),
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-                            Icon(LucideIcons.chevronRight, size: 14, color: theme.dividerColor),
+                            Text(
+                              CurrencyFormatter.format(tx.montant),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 14,
+                              color: theme.dividerColor,
+                            ),
                           ],
                         ),
                         if (sms != null && sms.montant != tx.montant)
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
-                            child: Text("⚠️ SMS indique: ${CurrencyFormatter.format(sms.montant)}",
-                                style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              "⚠️ SMS indique: ${CurrencyFormatter.format(sms.montant)}",
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),

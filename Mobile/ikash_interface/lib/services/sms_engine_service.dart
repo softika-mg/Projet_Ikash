@@ -9,7 +9,7 @@ class SmsEngineService {
 
     // 1. Détection de l'opérateur selon l'expéditeur
     OperatorType? op;
-    if (sender.contains('Mvola') || sender.contains('TELMA'))
+    if (sender.contains('MVola') || sender.contains('TELMA'))
       op = OperatorType.telma;
     if (sender.contains('Orange')) op = OperatorType.orange;
     if (sender.contains('Airtel')) op = OperatorType.airtel;

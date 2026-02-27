@@ -63,7 +63,9 @@ class LogDetailView extends StatelessWidget {
                     title: "Données SMS",
                     icon: LucideIcons.messageSquare,
                     // Vert si ça match, sinon Rouge/Orange
-                    color: isMatch ? Colors.green : (isWarning ? Colors.red : Colors.orange),
+                    color: isMatch
+                        ? Colors.green
+                        : (isWarning ? Colors.red : Colors.orange),
                     amount: sms?.montant ?? 0,
                     reference: sms?.reference ?? "Non reçu",
                     date: sms?.dateReception,
@@ -82,8 +84,10 @@ class LogDetailView extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding: EdgeInsets.only(left: 4),
-                  child: Text("Preuve SMS (Texte brut)",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    "Preuve SMS (Texte brut)",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -99,7 +103,7 @@ class LogDetailView extends StatelessWidget {
                       color: opColor.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: Text(
@@ -128,18 +132,25 @@ class LogDetailView extends StatelessWidget {
                       color: Colors.red.withOpacity(0.2),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: ElevatedButton.icon(
-                  onPressed: () { /* Action de signalement */ },
+                  onPressed: () {
+                    /* Action de signalement */
+                  },
                   icon: const Icon(LucideIcons.alertCircle),
-                  label: const Text("SIGNALER UNE ERREUR", style: TextStyle(fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    "SIGNALER UNE ERREUR",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -179,7 +190,15 @@ class LogDetailView extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 28),
           const SizedBox(width: 15),
-          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -201,7 +220,9 @@ class LogDetailView extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isPlaceholder ? theme.dividerColor.withOpacity(0.1) : color.withOpacity(0.3),
+          color: isPlaceholder
+              ? theme.dividerColor.withOpacity(0.1)
+              : color.withOpacity(0.3),
           width: 2,
         ),
       ),
@@ -214,7 +235,14 @@ class LogDetailView extends StatelessWidget {
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(height: 12),
-          Text(title, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade500,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
           FittedBox(
             child: Text(
@@ -222,16 +250,39 @@ class LogDetailView extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 19,
-                color: isPlaceholder ? Colors.grey.shade400 : theme.textTheme.bodyLarge?.color
+                color: isPlaceholder
+                    ? Colors.grey.shade400
+                    : theme.textTheme.bodyLarge?.color,
               ),
             ),
           ),
           const Divider(height: 25),
-          const Text("RÉFÉRENCE", style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+          const Text(
+            "RÉFÉRENCE",
+            style: TextStyle(
+              fontSize: 9,
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(reference, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+          Text(
+            reference,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
           const SizedBox(height: 12),
-          const Text("HEURE", style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+          const Text(
+            "HEURE",
+            style: TextStyle(
+              fontSize: 9,
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 2),
           Text(
             date != null ? DateFormat('HH:mm:ss').format(date) : "--:--",
@@ -258,7 +309,13 @@ class LogDetailView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text("SMS non trouvé", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                Text(
+                  "SMS non trouvé",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
                 Text(
                   "Le message de confirmation n'a pas encore été reçu ou analysé.",
                   style: TextStyle(fontSize: 12, color: Colors.orangeAccent),
