@@ -7,13 +7,13 @@ import 'package:intl/intl.dart';
 class LogDetailView extends StatelessWidget {
   final Transaction transaction;
   final SmsReceivedData? sms;
-  final Color opColor; // On reçoit la couleur de la puce ici
+  final Color opColor;
 
   const LogDetailView({
     super.key,
     required this.transaction,
     this.sms,
-    required this.opColor, // Requis pour la cohérence visuelle
+    required this.opColor,
   });
 
   @override
@@ -21,6 +21,7 @@ class LogDetailView extends StatelessWidget {
     final theme = Theme.of(context);
     final isMatch = sms != null && sms!.montant == transaction.montant;
     final isWarning = sms != null && !isMatch;
+    final bool isManual = transaction.estSaisieManuelle;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -28,7 +29,6 @@ class LogDetailView extends StatelessWidget {
         title: const Text("Détails de réconciliation"),
         centerTitle: true,
         elevation: 0,
-        // On donne une touche de la couleur opérateur à l'AppBar
         backgroundColor: opColor.withOpacity(0.1),
         foregroundColor: theme.textTheme.titleLarge?.color,
       ),
@@ -36,20 +36,24 @@ class LogDetailView extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // --- HEADER DE STATUT ---
+            // 1. Header de Statut (Validé / Alerte / Attente)
             _buildStatusHeader(isMatch, isWarning, sms == null),
+
+            // 2. Info de Provenance (Saisie Manuelle vs Automatique)
+            _buildProvenanceInfo(isManual, theme),
 
             const SizedBox(height: 30),
 
-            // --- COMPARAISON CÔTE À CÔTE ---
+            // 3. Comparaison Côte à Côte
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: _buildComparisonCard(
-                    title: "Saisie Agent",
-                    icon: LucideIcons.user,
-                    // Utilisation de la couleur de la puce (opColor)
+                    title: "Données App",
+                    // Icône dynamique selon la provenance de la transaction
+
+                    icon: isManual ? LucideIcons.pencil: LucideIcons.zap,
                     color: opColor,
                     amount: transaction.montant,
                     reference: transaction.reference,
@@ -62,7 +66,6 @@ class LogDetailView extends StatelessWidget {
                   child: _buildComparisonCard(
                     title: "Données SMS",
                     icon: LucideIcons.messageSquare,
-                    // Vert si ça match, sinon Rouge/Orange
                     color: isMatch
                         ? Colors.green
                         : (isWarning ? Colors.red : Colors.orange),
@@ -78,7 +81,7 @@ class LogDetailView extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // --- PREUVE BRUTE (SMS TEXT) ---
+            // 4. Preuve Brute ou Alerte de Manquant
             if (sms != null) ...[
               const Align(
                 alignment: Alignment.centerLeft,
@@ -91,77 +94,73 @@ class LogDetailView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: opColor.withOpacity(0.2)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: opColor.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  sms!.rawBody,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    height: 1.6,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
+              _buildRawSmsContainer(sms!.rawBody, theme),
             ] else
-              _buildMissingSmsAlert(),
+              _buildMissingSmsAlert(isManual),
 
             const SizedBox(height: 40),
 
-            // --- BOUTON D'ACTION SI ERREUR ---
-            if (isWarning)
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withOpacity(0.2),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    /* Action de signalement */
-                  },
-                  icon: const Icon(LucideIcons.alertCircle),
-                  label: const Text(
-                    "SIGNALER UNE ERREUR",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
+            // 5. Action corrective si incohérence
+            if (isWarning) _buildErrorButton(),
           ],
         ),
       ),
     );
   }
 
-  // --- COMPOSANTS DE L'INTERFACE ---
+  // --- COMPOSANTS INTERNES ---
+
+  Widget _buildProvenanceInfo(bool isManual, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (isManual ? Colors.blue : Colors.purple).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isManual ? LucideIcons.hand : LucideIcons.zap,
+              size: 18,
+              color: isManual ? Colors.blue : Colors.purple,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isManual ? "SAISIE MANUELLE" : "EXTRACTION AUTOMATIQUE",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isManual ? Colors.blue : Colors.purple,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isManual
+                      ? "Cette transaction a été saisie par vos soins."
+                      : "Transaction détectée par SMS et confirmée par l'application.",
+                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStatusHeader(bool isMatch, bool isWarning, bool isPending) {
     Color color = Colors.orange;
@@ -220,9 +219,7 @@ class LogDetailView extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isPlaceholder
-              ? theme.dividerColor.withOpacity(0.1)
-              : color.withOpacity(0.3),
+          color: isPlaceholder ? theme.dividerColor.withOpacity(0.1) : color.withOpacity(0.3),
           width: 2,
         ),
       ),
@@ -235,14 +232,7 @@ class LogDetailView extends StatelessWidget {
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           FittedBox(
             child: Text(
@@ -250,50 +240,54 @@ class LogDetailView extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 19,
-                color: isPlaceholder
-                    ? Colors.grey.shade400
-                    : theme.textTheme.bodyLarge?.color,
+                color: isPlaceholder ? Colors.grey.shade400 : theme.textTheme.bodyLarge?.color,
               ),
             ),
           ),
           const Divider(height: 25),
-          const Text(
-            "RÉFÉRENCE",
-            style: TextStyle(
-              fontSize: 9,
-              color: Colors.grey,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            reference,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-            ),
-          ),
+          _buildSmallLabel("RÉFÉRENCE", reference, isMonospace: true),
           const SizedBox(height: 12),
-          const Text(
-            "HEURE",
-            style: TextStyle(
-              fontSize: 9,
-              color: Colors.grey,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            date != null ? DateFormat('HH:mm:ss').format(date) : "--:--",
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-          ),
+          _buildSmallLabel("HEURE", date != null ? DateFormat('HH:mm:ss').format(date) : "--:--"),
         ],
       ),
     );
   }
 
-  Widget _buildMissingSmsAlert() {
+  Widget _buildSmallLabel(String label, String value, {bool isMonospace = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            fontFamily: isMonospace ? 'monospace' : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRawSmsContainer(String body, ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: opColor.withOpacity(0.2)),
+      ),
+      child: Text(
+        body,
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 13, height: 1.6),
+      ),
+    );
+  }
+
+  Widget _buildMissingSmsAlert(bool isManual) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -308,22 +302,32 @@ class LogDetailView extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
+                const Text("Donnée SMS absente", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
                 Text(
-                  "SMS non trouvé",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-                Text(
-                  "Le message de confirmation n'a pas encore été reçu ou analysé.",
-                  style: TextStyle(fontSize: 12, color: Colors.orangeAccent),
+                  isManual
+                    ? "Normal : Vous avez choisi de forcer cette transaction manuellement."
+                    : "Le message réseau n'a pas encore été reçu par l'appareil.",
+                  style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorButton() {
+    return ElevatedButton.icon(
+      onPressed: () {},
+      icon: const Icon(LucideIcons.alertCircle),
+      label: const Text("SIGNALER UNE ERREUR", style: TextStyle(fontWeight: FontWeight.bold)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 55),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       ),
     );
   }

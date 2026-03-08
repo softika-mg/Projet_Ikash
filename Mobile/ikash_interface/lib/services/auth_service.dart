@@ -96,6 +96,13 @@ final currentAgentIdProvider = Provider<int>((ref) {
   // Si pas de profil (déconnecté), on retourne 0 ou un ID invalide
   return profile?.id ?? 0;
 });
+// Provider qui récupère les puces pour un ID spécifique
+final agentPucesProvider = StreamProvider.family<List<AgentNumber>, int>((
+  ref,
+  agentId,
+) {
+  return ref.watch(databaseProvider).watchAgentNumbers(agentId);
+});
 
 // 2. On branche les puces sur cet ID
 final allPucesProvider = StreamProvider<List<AgentNumber>>((ref) {

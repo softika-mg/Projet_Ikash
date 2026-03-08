@@ -64,42 +64,59 @@ class SmsSyncService {
   }
 
   Future<void> validateSmsAsTransaction(SmsReceivedData sms) async {
-    // 1. On récupère l'utilisateur actuel pour mettre à jour son solde
     final currentUser = ref.read(currentUserProvider);
     if (currentUser == null) return;
 
-    // 2. On utilise une transaction SQLite pour garantir que tout est fait ou rien
     await db.transaction(() async {
-      // A. Créer la transaction officielle
-      await db
-          .into(db.transactions)
-          .insert(
-            TransactionsCompanion.insert(
-              type: Value(sms.type) as TransactionType,
-              montant: sms.montant,
-              reference: sms.reference,
-              operateur: Value(sms.operateur) as OperatorType,
-              horodatage: Value(DateTime.now()),
-              agentId: currentUser.id,
-            ),
-          );
+      // 1. Chercher si une transaction avec cette référence existe déjà
+      final existingTx = await (db.select(
+        db.transactions,
+      )..where((t) => t.reference.equals(sms.reference))).getSingleOrNull();
 
-      // B. Mettre à jour le solde de l'agent
-      final nouveauSolde = sms.type == TransactionType.depot
-          ? currentUser.soldeCourant + sms.montant
-          : currentUser.soldeCourant - sms.montant;
+      if (existingTx != null) {
+        // CAS 1 : Déjà saisie manuellement.
+        // On ne change pas le solde (déjà fait à la saisie), on valide juste.
+        print("Matching trouvé pour la référence ${sms.reference}");
+      } else {
+        // CAS 2 : Nouvelle transaction (SMS reçu avant saisie ou oubli)
+        // ICI on applique l'impact sur le solde
+        final impact = (sms.type == TransactionType.depot)
+            ? -sms.montant
+            : sms.montant;
+        final nouveauSolde = (currentUser.soldeCourant + impact)
+            .roundToDouble();
 
-      await (db.update(db.profiles)..where((t) => t.id.equals(currentUser.id)))
-          .write(ProfilesCompanion(soldeCourant: Value(nouveauSolde)));
+        // Insertion de la transaction "Automatique"
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                type: sms.type,
+                montant: sms.montant,
+                reference: sms.reference,
+                operateur: sms.operateur,
+                agentId: currentUser.id,
+                estSaisieManuelle: const Value(
+                  false,
+                ), // Preuve que ça vient du SMS
+                horodatage: Value(sms.dateReception),
+              ),
+            );
 
-      // C. Marquer le SMS comme traité pour qu'il disparaisse du sas
+        // Mise à jour du solde seulement dans ce cas
+        await (db.update(db.profiles)
+              ..where((t) => t.id.equals(currentUser.id)))
+            .write(ProfilesCompanion(soldeCourant: Value(nouveauSolde)));
+
+        // Update UI state
+        ref
+            .read(currentUserProvider.notifier)
+            .setUser(currentUser.copyWith(soldeCourant: nouveauSolde));
+      }
+
+      // 3. Dans tous les cas, le SMS est maintenant traité
       await (db.update(db.smsReceived)..where((t) => t.id.equals(sms.id)))
           .write(const SmsReceivedCompanion(estTraite: Value(true)));
-
-      // D. Mettre à jour l'état de l'utilisateur dans l'app
-      ref
-          .read(currentUserProvider.notifier)
-          .setUser(currentUser.copyWith(soldeCourant: nouveauSolde));
     });
   }
 }

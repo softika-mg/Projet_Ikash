@@ -16,6 +16,7 @@ import 'setting_view.dart';
 import 'about_view.dart';
 import 'tutorial_view.dart';
 import 'tarif_admin_screen.dart';
+import 'smsinboxview.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -39,7 +40,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final bool isAdmin = user.role == RoleType.admin;
 
     final List<Widget> pages = isAdmin
-        ? [const AdminDashboard(), const AdminLogsView()]
+        ? [const AdminDashboard(), const AdminLogsView(), const SmsInboxView()]
         : [const AgentHome(), const HistoryView(), const StatsView()];
 
     return Scaffold(
@@ -280,6 +281,11 @@ class _MainShellState extends ConsumerState<MainShell> {
       SalomonBottomBarItem(
         icon: const Icon(LucideIcons.clipboardList),
         title: const Text("Logs"),
+        selectedColor: Colors.indigo,
+      ),
+      SalomonBottomBarItem(
+        icon: const Icon(LucideIcons.mail),
+        title: const Text("SMS"),
         selectedColor: Colors.indigo,
       ),
     ];

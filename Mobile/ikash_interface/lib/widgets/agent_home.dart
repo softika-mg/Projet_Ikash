@@ -10,6 +10,7 @@ import '../models/enum.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../views/history_view.dart';
 import '../core/utils/formatters.dart';
+import '../views/sms_sync_validation_view.dart';
 
 class AgentHome extends ConsumerWidget {
   const AgentHome({super.key});
@@ -370,12 +371,15 @@ class AgentHome extends ConsumerWidget {
       ),
       onTap: () async {
         if (await Permission.sms.request().isGranted) {
+          // 1. On récupère les SMS (ils vont dans la table smsReceived)
           await ref.read(smsSyncProvider).fetchAndParseSms();
+
+          // 2. On redirige vers la vue de validation
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Synchronisation terminée"),
-                behavior: SnackBarBehavior.floating,
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SmsSyncValidationView(),
               ),
             );
           }

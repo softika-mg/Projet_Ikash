@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../database/app_database.dart';
 import '../services/auth_service.dart';
+import '../services/sms_sync_service.dart';
 
 class PendingSmsView extends ConsumerWidget {
   const PendingSmsView({super.key});

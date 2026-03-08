@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as d;
+import '../database/app_database.dart';
 
 // Assure-toi que ces imports correspondent à ton arborescence
 import '../models/enum.dart';
@@ -85,40 +86,48 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
 
   // --- MISE À JOUR AUTOMATIQUE DES FRAIS ---
   void _onAmountChanged(String value) {
-    // Si on a formaté avec des espaces/virgules, on nettoie d'abord
     final cleanValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-    final montant = double.tryParse(cleanValue) ?? 0;
-
-    if (montant == 0 || _activePuce == null) {
-      setState(() {
-        _feeController.text = '0';
-        _bonusController.text = '0';
-      });
+    if (cleanValue.isEmpty) {
+      _resetFees();
       return;
     }
 
-    final tarifsAsync = ref.read(tarifsStreamProvider);
+    final montant = double.tryParse(cleanValue) ?? 0;
+    if (montant == 0 || _activePuce == null) {
+      _resetFees();
+      return;
+    }
 
-    tarifsAsync.whenData((liste) {
-      try {
-        final tarifMatch = liste.firstWhere(
-          (t) =>
-              t.operateur == _selectedOperator &&
-              montant >= t.montantMin &&
-              montant <= t.montantMax,
-        );
+    // On récupère l'état actuel du provider
+    final tarifsState = ref.read(tarifsStreamProvider);
 
+    // On vérifie si on a des données (value est la liste des tarifs)
+    if (tarifsState.hasValue) {
+      final liste = tarifsState.value!;
+
+      final tarifMatch = liste.where((t) {
+        final sameOp = t.operateur == _selectedOperator;
+        final inRange = montant >= t.montantMin && montant <= t.montantMax;
+        return sameOp && inRange;
+      }).firstOrNull;
+
+      if (tarifMatch != null) {
         setState(() {
           _feeController.text = tarifMatch.fraisClient.toInt().toString();
           final gainEstime = tarifMatch.fraisClient - tarifMatch.fraisOperateur;
           _bonusController.text = gainEstime.toInt().toString();
         });
-      } catch (e) {
-        setState(() {
-          _feeController.text = '0';
-          _bonusController.text = '0';
-        });
+      } else {
+        _resetFees();
       }
+    }
+  }
+
+  // Petite fonction helper pour éviter la répétition
+  void _resetFees() {
+    setState(() {
+      _feeController.text = '0';
+      _bonusController.text = '0';
     });
   }
 
@@ -226,60 +235,81 @@ class _AddTransactionViewState extends ConsumerState<AddTransactionView> {
     );
   }
 
-  // --- SAUVEGARDE EN BASE ---
   Future<void> _handleSave(Color activeColor) async {
+    // 1. On capture IMMÉDIATEMENT les valeurs pour éviter qu'elles ne changent
+    // pendant l'attente de la base de données
+    final selectedPuce = _activePuce;
+
+    if (selectedPuce == null) {
+      _showError("Erreur : Aucune puce sélectionnée.");
+      return;
+    }
+
+    // On stocke l'ID dans une variable locale
+    final puceId = selectedPuce.id;
+
     try {
       final montant =
           double.tryParse(_amountController.text.replaceAll(' ', '')) ?? 0;
       final frais = double.tryParse(_feeController.text) ?? 0;
       final bonus = double.tryParse(_bonusController.text) ?? 0;
 
+      // 2. On prépare le companion avec l'ID local
       final companion = TransactionsCompanion.insert(
         type: _selectedType,
         operateur: _selectedOperator,
         reference: _refController.text,
         montant: montant,
-        horodatage: d.Value(_now),
-        agentId: _activePuce!.id,
+        horodatage: d.Value(DateTime.now()), // Utilise DateTime.now() frais
+        agentId: puceId,
         numeroClient: d.Value(_phoneController.text),
         nomClient: d.Value(_nameController.text),
         commission: d.Value(_commissionController.text),
         bonus: d.Value(bonus),
         fraisClient: d.Value(frais),
-        agentNumberId: d.Value(_activePuce!.id),
+        agentNumberId: d.Value(
+          puceId,
+        ), // On utilise notre variable locale stable
       );
 
       await ref.read(transactionControllerProvider).saveTransaction(companion);
 
       if (mounted) {
+        // 3. Fermer le clavier AVANT de vider les champs pour éviter les warnings IInputConnection
+        FocusScope.of(context).unfocus();
+
         AppStatusDialog.show(
           context,
           title: "Succès !",
           message: "Transaction enregistrée avec succès.",
         );
+
+        // Réinitialisation propre
         _refController.clear();
         _amountController.clear();
         _phoneController.clear();
         _nameController.clear();
         _feeController.text = '0';
         _commissionController.text = "0";
+        _bonusController.text = "0";
       }
     } catch (e) {
       if (mounted) {
-        AppStatusDialog.show(
-          context,
-          title: "Erreur",
-          message: e.toString(),
-          isError: true,
-        );
+        _showError(e.toString());
       }
     }
+  }
+
+  // Helper pour les erreurs
+  void _showError(String msg) {
+    AppStatusDialog.show(context, title: "Erreur", message: msg, isError: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final pucesAsync = ref.watch(agentNumbersStreamProvider);
+    final tarifsAsync = ref.watch(tarifsStreamProvider);
 
     // Couleur active basée sur la puce sélectionnée, ou primaryColor par défaut
     Color activeColor = theme.primaryColor;

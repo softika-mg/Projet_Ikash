@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ikash_interface/widgets/puce_card.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:drift/drift.dart' as d;
 import '../database/app_database.dart';
@@ -59,11 +60,13 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final db = ref.watch(databaseProvider);
     final currentUser = ref.watch(currentUserProvider);
 
-    if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("Veuillez vous reconnecter")),
-      );
-    }
+    // RÉCUPÉRATION DES PUCES VIA PROVIDER (Comme sur Agent Homme)
+    // On utilise currentAgentId pour que l'agent voit les siennes
+    // et que l'admin voit celles du profil qu'il consulte.
+    final pucesAsync = ref.watch(agentPucesProvider(currentAgentId));
+
+    if (currentUser == null)
+      return const Scaffold(body: Center(child: Text("Reconnectez-vous")));
 
     final bool isAdmin = currentUser.role == RoleType.admin;
 
@@ -76,81 +79,94 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             return const Center(child: CircularProgressIndicator());
           final profile = profileSnapshot.data!;
 
-          return StreamBuilder<List<AgentNumber>>(
-            stream: db.watchAgentNumbers(currentAgentId),
-            builder: (context, snapshot) {
-              final puces = snapshot.data ?? [];
-              final soldeTotal = puces.fold(
-                0.0,
-                (sum, item) => sum + item.soldePuce,
-              );
+          // Calcul du solde global réactif
+          final soldeTotal = pucesAsync.maybeWhen(
+            data: (list) => list.fold(0.0, (sum, item) => sum + item.soldePuce),
+            orElse: () => 0.0,
+          );
 
-              return ListView(
-                padding: const EdgeInsets.all(20),
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _buildHeader(theme, profile, isAdmin),
+              const SizedBox(height: 25),
+
+              _buildInfoTile(
+                "Statut",
+                isAdmin ? "Administrateur" : "Agent",
+                isAdmin ? LucideIcons.shieldCheck : LucideIcons.user,
+                theme,
+              ),
+
+              _buildInfoTile(
+                "Solde Global",
+                CurrencyFormatter.format(soldeTotal),
+                LucideIcons.wallet,
+                theme,
+                valueColor: Colors.green,
+              ),
+
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Divider(),
+              ),
+
+              // --- SECTION TITRE + BOUTON AJOUTER ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildHeader(theme, profile, isAdmin),
-                  const SizedBox(height: 25),
-
-                  _buildInfoTile(
-                    "Statut",
-                    isAdmin ? "Administrateur" : "Agent de terrain",
-                    isAdmin ? LucideIcons.shieldCheck : LucideIcons.user,
-                    theme,
+                  Text(
+                    "MES PUCES DE TRAVAIL",
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.hintColor,
+                    ),
                   ),
-
-                  _buildInfoTile(
-                    "Solde Global",
-                    CurrencyFormatter.format(soldeTotal),
-                    LucideIcons.wallet,
-                    theme,
-                    valueColor: Colors.green,
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Divider(),
-                  ),
-
-                  // --- Section Puces avec Gestion des Droits ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "MES PUCES DE TRAVAIL",
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (isAdmin && puces.length < 5) // Seul l'admin ajoute
-                        TextButton.icon(
-                          onPressed: () => _showEditNumberDialog(context, null),
-                          icon: const Icon(LucideIcons.plus, size: 18),
-                          label: const Text("Ajouter"),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-
-                  if (puces.isEmpty)
-                    _buildEmptyState()
-                  else
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 14,
-                            childAspectRatio: 1.1,
-                          ),
-                      itemCount: puces.length,
-                      itemBuilder: (context, index) =>
-                          _buildPuceCard(puces[index], theme, isAdmin),
+                  if (isAdmin)
+                    TextButton.icon(
+                      onPressed: () => _showEditNumberDialog(context, null),
+                      icon: const Icon(LucideIcons.plus, size: 18),
+                      label: const Text("Ajouter"),
                     ),
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: 15),
+
+              // --- AFFICHAGE DES PUCES (RÉACTIF) ---
+              pucesAsync.when(
+                data: (puces) => puces.isEmpty
+                    ? _buildEmptyState()
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 14,
+                              mainAxisSpacing: 14,
+                              childAspectRatio: 1.1,
+                            ),
+                        itemCount: puces.length,
+                        itemBuilder: (context, index) {
+                          final puce = puces[index];
+                          return PuceCard(
+                            puce: puce,
+                            canEdit: isAdmin, // Affiche le cadenas ouvert/fermé
+                            onTap: isAdmin
+                                ? () async {
+                                    // Seul l'admin déclenche l'auth + dialogue
+                                    bool auth = await _authenticateAdmin();
+                                    if (auth && context.mounted)
+                                      _showEditNumberDialog(context, puce);
+                                  }
+                                : null, // L'agent ne peut pas cliquer
+                          );
+                        },
+                      ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text("Erreur : $e")),
+              ),
+            ],
           );
         },
       ),
@@ -185,25 +201,21 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
   // --- CARTE PUCE (DYNAMIQUE) ---
   Widget _buildPuceCard(AgentNumber puce, ThemeData theme, bool isAdmin) {
-    // Si tu n'as pas encore la colonne couleur en base, on garde le fallback par opérateur
-    // Mais ici, on imagine que puce.color (int) existe
-    final Color cardColor = Color(
-      int.tryParse(puce.color ?? "") ?? _getOpColor(puce.operateur).value,
-    );
+    // 1. Détermination de la couleur (stoppe le crash si la donnée en base est mal formatée)
+    Color cardColor;
+    try {
+      cardColor = Color(int.parse(puce.color ?? ""));
+    } catch (_) {
+      cardColor = _getOpColor(puce.operateur);
+    }
 
     return InkWell(
+      // Si PAS admin, on met onTap à null -> Aucune réaction au clic, lecture seule
       onTap: isAdmin
           ? () async {
-              // On déclenche l'empreinte digitale
               bool authenticated = await _authenticateAdmin();
-
-              if (authenticated) {
-                if (context.mounted) _showEditNumberDialog(context, puce);
-              } else {
-                // Optionnel : Afficher un petit message si échec
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Authentification échouée")),
-                );
+              if (authenticated && context.mounted) {
+                _showEditNumberDialog(context, puce);
               }
             }
           : null,
@@ -213,7 +225,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
         decoration: BoxDecoration(
           color: cardColor.withOpacity(0.12),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: cardColor.withOpacity(0.3), width: 2),
+          border: Border.all(
+            color: isAdmin
+                ? cardColor.withOpacity(0.4)
+                : cardColor.withOpacity(0.1),
+            width: 2,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,15 +239,18 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(LucideIcons.smartphone, color: cardColor, size: 24),
-                if (isAdmin)
-                  Icon(
-                    LucideIcons.lock,
-                    size: 12,
-                    color: cardColor.withOpacity(0.5),
-                  ),
+                // Logo de l'opérateur (Visuel pro)
+                Icon(LucideIcons.smartphone, color: cardColor, size: 22),
+
+                // Indicateur de statut pour l'agent
+                Icon(
+                  isAdmin ? LucideIcons.unlock : LucideIcons.lock,
+                  size: 14,
+                  color: cardColor.withOpacity(0.5),
+                ),
               ],
             ),
+            const SizedBox(height: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -238,11 +258,39 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   CurrencyFormatter.format(puce.soldePuce),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 18,
                     color: cardColor,
                   ),
                 ),
-                Text(puce.numeroPuce, style: theme.textTheme.labelSmall),
+                const SizedBox(height: 4),
+                Text(
+                  puce.numeroPuce,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.labelSmall?.color?.withOpacity(0.7),
+                  ),
+                ),
+                // Petit badge du nom de l'opérateur
+                Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cardColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    puce.operateur.name.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: cardColor,
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
