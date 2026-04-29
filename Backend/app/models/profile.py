@@ -12,15 +12,24 @@ if TYPE_CHECKING:
 class Profile(SQLModel, table=True):
     __tablename__ = "profiles"
 
-    id: UUID = Field(primary_key=True)  # Lié à l'UUID de Supabase Auth
+    # Identifiant unique du profil (UUID)
+    id: UUID = Field(primary_key=True)
     nom: str
+
+    # Rôle de l'utilisateur : ADMIN ou AGENT
     role: str = Field(default=RoleType.AGENT.value)
+
+    # Code PIN optionnel pour l'authentification mobile
     code_pin: Optional[str] = None
+
+    # Solde courant de l'agent
     solde_courant: float = Field(default=0)
+
+    # Date de création du profil
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # MULTI-TENANCY : Lien vers l'administrateur
+    # Administrateur lié dans le modèle multi-tenancy
     admin_id: Optional[UUID] = Field(default=None, foreign_key="profiles.id")
 
-    # Relations (pour faciliter les requêtes)
+    # Relations ORM : un profil peut avoir plusieurs transactions
     agent_transactions: List["Transaction"] = Relationship(back_populates="agent")

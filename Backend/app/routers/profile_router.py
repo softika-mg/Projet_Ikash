@@ -1,31 +1,33 @@
-from fastapi import APIRouter, Depends
-from sqlmodel import Session
-from app.database import engine
-from app.models import Profile
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List
+from sqlmodel import Session, select
+from app.database import get_session
+from app.models import Profile
 from app.services import profile_service
 from app.security.get_api_key import get_api_key
-from app.schemas.profile_schemas import SoldeUpdateRequest
+from app.schemas.profile_schemas import ProfileCreate, ProfileRead, SoldeUpdateRequest
 from app.models.log import LogActivite
-from fastapi import HTTPException
-from app.database import get_session
-
 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
 
-# Dépendance pour obtenir la session de la DB
-@router.get("/", response_model=List[Profile])
-def get_profiles(api_key: str = Depends(get_api_key)):
-    with Session(engine) as session:
-        # Pour l'instant on renvoie tout pour tester
-        return session.query(Profile).all()
+
+@router.get("/", response_model=List[ProfileRead])
+def get_profiles(
+    session: Session = Depends(get_session), api_key: str = Depends(get_api_key)
+):
+    statement = select(Profile)
+    return session.exec(statement).all()
 
 
-# Route pour créer un nouveau profil
-@router.post("/")
-def create_profile(profile: Profile, api_key: str = Depends(get_api_key)):
-    with Session(engine) as session:
-        return profile_service.create_new_profile(session, profile)
+@router.post("/", response_model=ProfileRead)
+def create_profile(
+    profile: ProfileCreate,
+    session: Session = Depends(get_session),
+    api_key: str = Depends(get_api_key),
+):
+    # Crée un nouveau profil à partir des données validées par Pydantic
+    profile_obj = Profile(**profile.model_dump(exclude_none=True))
+    return profile_service.create_new_profile(session, profile_obj)
 
 
 @router.post("/ajuster-solde")
@@ -34,17 +36,15 @@ def ajuster_solde_agent(
     session: Session = Depends(get_session),
     api_key: str = Depends(get_api_key),
 ):
-    # 1. Récupérer l'agent
+    # Récupération de l'agent avant modification du solde
     agent = session.get(Profile, payload.agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent non trouvé")
 
-    # 2. Préparer les données pour le log
     ancien_solde = agent.solde_courant
     agent.solde_courant += payload.montant
     nouveau_solde = agent.solde_courant
 
-    # 3. Créer l'entrée dans le log
     nouveau_log = LogActivite(
         admin_id=payload.admin_id,
         agent_id=payload.agent_id,
@@ -53,7 +53,7 @@ def ajuster_solde_agent(
         nouveau_solde=nouveau_solde,
     )
 
-    # 4. Sauvegarder le tout
+    # Enregistrement de l'agent et du log d'activité ensemble
     session.add(agent)
     session.add(nouveau_log)
     session.commit()

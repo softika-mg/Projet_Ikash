@@ -5,8 +5,11 @@ from uuid import UUID
 from typing import List, Optional
 from app.models.log import LogActivite
 
+
 # Service pour gérer les profils (Admins et Agents)
+
 def update_agent_balance_with_log(session: Session, admin_id: UUID, agent_id: UUID, amount: float):
+    """Met à jour le solde d'un agent et enregistre un log d'opération."""
     agent = session.get(Profile, agent_id)
     if not agent:
         return None
@@ -15,26 +18,24 @@ def update_agent_balance_with_log(session: Session, admin_id: UUID, agent_id: UU
     agent.solde_courant += amount
     nouveau = agent.solde_courant
 
-    # On crée le log
     log = LogActivite(
         admin_id=admin_id,
         agent_id=agent_id,
         action="MODIFICATION_SOLDE",
         ancien_solde=ancien,
-        nouveau_solde=nouveau
+        nouveau_solde=nouveau,
     )
 
     session.add(agent)
-    session.add(log) # On enregistre les deux en même temps !
+    session.add(log)
     session.commit()
     return agent
 
 
 def create_new_profile(session: Session, profile_data: Profile) -> Profile:
-    # 1. On crée le profil
+    """Crée un nouveau profil et logge la création."""
     session.add(profile_data)
 
-    # 2. On crée manuellement le log de l'événement
     nouveau_log = LogActivite(
         agent_id=profile_data.id,
         action="CREATION_COMPTE",
@@ -48,10 +49,7 @@ def create_new_profile(session: Session, profile_data: Profile) -> Profile:
 
 
 def get_agents_by_admin(session: Session, admin_id: UUID) -> List[Profile]:
-    """
-    Récupère tous les agents liés à un administrateur spécifique.
-    C'est le cœur du Multi-Tenancy pour le tableau de bord du Boss.
-    """
+    """Récupère tous les agents d'un administrateur donné."""
     statement = select(Profile).where(
         Profile.admin_id == admin_id, Profile.role == RoleType.AGENT
     )
@@ -59,9 +57,7 @@ def get_agents_by_admin(session: Session, admin_id: UUID) -> List[Profile]:
 
 
 def update_agent_balance(session: Session, agent_id: UUID, amount: float):
-    """
-    Utile plus tard pour mettre à jour le solde après une transaction.
-    """
+    """Met à jour le solde d'un agent sans log supplémentaire."""
     agent = session.get(Profile, agent_id)
     if agent:
         agent.solde_courant += amount

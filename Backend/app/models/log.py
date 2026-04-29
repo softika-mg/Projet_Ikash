@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 class LogActivite(SQLModel, table=True):
+    """Table de journalisation des actions administratives et agents."""
     __tablename__ = "logs_activites"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)

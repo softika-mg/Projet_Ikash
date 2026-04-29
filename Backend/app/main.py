@@ -7,6 +7,7 @@ from fastapi import Depends
 from app.security.get_api_key import get_api_key
 
 
+# Application FastAPI principale pour iKash
 app = FastAPI(
     title="iKash API",
     description="Système de gestion de transactions Mobile Money",
@@ -20,20 +21,12 @@ app = FastAPI(
 def on_startup():
     create_db_and_tables()
 
-# Inclusion des routeurs
-app.include_router(
-    transaction_router.router
-)
-app.include_router(
-    sms_router.router
-)
-app.include_router(
-    log_router.router
-)
-app.include_router(
-    profile_router.router,
-    dependencies=[Depends(get_api_key)]
-)
+# Inclusion des routeurs principaux de l'API
+# Les routes de profil sont protégées par la clé API
+app.include_router(transaction_router)
+app.include_router(sms_router)
+app.include_router(log_router)
+app.include_router(profile_router, dependencies=[Depends(get_api_key)])
 
 @app.get("/scalar", include_in_schema=False)
 async def scalar_html():

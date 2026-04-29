@@ -1,41 +1,60 @@
 import re
 from typing import Optional, Dict
+from app.models.enums import OperatorType, TransactionType
 
 
 def parse_mobile_money_sms(sms_text: str) -> Optional[Dict]:
-    # On nettoie un peu le texte pour éviter les problèmes de sauts de ligne
+    """Analyse un texte de SMS Mobile Money et retourne les champs extraits."""
     sms_text = sms_text.replace("\n", " ").strip()
+    lower_text = sms_text.lower()
 
-    # 1. Regex Montant : Cherche des chiffres suivis de 'Ar', 'MGA' ou précédés de 'Montant'
-    # Gère : "50.000 Ar", "50000Ar", "Montant: 50000"
-    montant_pattern = r"(?:Montant[:\s]+)?(\d+[\d\s\.]*)\s?(?:Ar|MGA)?"
+    montant_pattern = r"(?:montant[:\s]+)?(\d+[\d\s\.]*)\s?(?:ar|mga)?"
     montant_match = re.search(montant_pattern, sms_text, re.IGNORECASE)
 
-    # 2. Regex Référence : Cherche un code alphanumérique après 'Ref' ou 'Transaction ID'
-    ref_pattern = r"(?:Ref|ID|Transaction)[:\s]+([A-Z0-9]+)"
+    ref_pattern = r"(?:ref[:\s]+|transaction\s*id[:\s]+|id[:\s]+)([A-Z0-9]+)"
     ref_match = re.search(ref_pattern, sms_text, re.IGNORECASE)
 
-    # 3. Regex Expéditeur/Agent : Cherche un numéro malgache (032, 034, 033, 038)
-    # Gère : "0340000000", "+261340000000", "034 00 000 00"
-    sender_pattern = r"(?:de|par)\s?(\+?261)?\s?(03[2348]\s?\d{2}\s?\d{3}\s?\d{2})"
-    sender_match = re.search(sender_pattern, sms_text, re.IGNORECASE)
+    operator_pattern = r"\b(telma|airt?el|orange)\b"
+    operator_match = re.search(operator_pattern, sms_text, re.IGNORECASE)
+    operator = None
+    if operator_match:
+        operator_value = operator_match.group(1).upper()
+        if operator_value == "AIRTEL":
+            operator = OperatorType.AIRTEL
+        elif operator_value == "TELMA":
+            operator = OperatorType.TELMA
+        elif operator_value == "ORANGE":
+            operator = OperatorType.ORANGE
+        else:
+            operator = OperatorType.AUTRE
+
+    client_pattern = r"(\+?261\s?3[2348][\d\s\.]+|03[2348][\d\s\.]+)"
+    client_match = re.search(client_pattern, sms_text)
+    numero_client = None
+    if client_match:
+        # Normalise le numéro malgache en supprimant les espaces et points
+        numero_client = client_match.group(0).replace(" ", "").replace(".", "")
 
     if montant_match and ref_match:
-        # Nettoyage propre du montant
         raw_montant = montant_match.group(1).replace(" ", "").replace(".", "")
         montant = float(raw_montant)
 
-        # Nettoyage du numéro (on garde le format standard 034...)
-        raw_sender = (
-            sender_match.group(2).replace(" ", "") if sender_match else "UNKNOWN"
-        )
+        if "retrait" in lower_text or "retir" in lower_text:
+            transaction_type = TransactionType.RETRAIT
+        elif "transfert" in lower_text or "envoy" in lower_text:
+            transaction_type = TransactionType.TRANSFERT
+        elif "credit" in lower_text or "crédit" in lower_text:
+            transaction_type = TransactionType.CREDIT
+        else:
+            transaction_type = TransactionType.DEPOT
 
         return {
             "montant": montant,
-            "reference_sms": ref_match.group(1),
-            "type_op": "RECEPTION",  # On pourra affiner cela plus tard
-            "agent_id": raw_sender,
-            "raw_text": sms_text,  # Toujours garder l'original pour audit
+            "reference": ref_match.group(1),
+            "type": transaction_type,
+            "operateur": operator,
+            "numero_client": numero_client,
+            "est_saisie_manuelle": False,
         }
 
     return None
