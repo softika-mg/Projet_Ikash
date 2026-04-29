@@ -22,8 +22,8 @@ Le projet est structuré pour séparer strictement l'infrastructure, la logique 
 *Architecture en couches (Layered Architecture)*
 * `lib/core/` : Fondations (thèmes, constantes, utilitaires).
 * `lib/data/` : Gestion des données (modèles Drift/SQLite et connecteurs API).
-* `lib/logic/` : Intelligence métier et gestion des états (State Management).
-* `lib/ui/` : Interface utilisateur (Vues Admin/Agent et widgets).
+* `lib/providers/` : Intelligence métier et gestion des états (State Management).
+* `lib/view/` : Interface utilisateur (Vues Admin/Agent et widgets).
 
 ### 📂 `scripts/`
 * Outils DevOps pour l'automatisation des migrations, les backups et le déploiement.
