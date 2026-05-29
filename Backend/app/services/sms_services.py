@@ -20,6 +20,29 @@ def handle_incoming_sms(sms_text: str):
     return {"status": "error", "message": "Format inconnu", "category": category}
 
 
+def generate_sms_report(sms_text: str):
+    """Génère un rapport de classification et d'analyse SMS sans enregistrer en base."""
+    parsed_data = parse_mobile_money_sms(sms_text)
+    classification = classifier.predict_category(sms_text)
+
+    if parsed_data:
+        return {
+            "status": "parsed",
+            "message": "SMS analysé avec succès.",
+            "category": classification,
+            "parsed_data": parsed_data,
+            "text": sms_text,
+        }
+
+    return {
+        "status": "error",
+        "message": "Format SMS inconnu.",
+        "category": classification,
+        "parsed_data": None,
+        "text": sms_text,
+    }
+
+
 # Service complet pour traiter et enregistrer le SMS
 def process_incoming_sms(session: Session, sms_text: str):
     parsed_data = parse_mobile_money_sms(sms_text)
@@ -27,6 +50,14 @@ def process_incoming_sms(session: Session, sms_text: str):
 
     if not parsed_data:
         return {"status": "error", "message": "Format SMS inconnu", "classification": classification}
+
+    if "reference" not in parsed_data or not parsed_data.get("reference"):
+        return {
+            "status": "error",
+            "message": "Format SMS reconnu, mais référence manquante.",
+            "classification": classification,
+            "parsed_data": parsed_data,
+        }
 
     try:
         new_transaction = Transaction(**parsed_data)
@@ -36,6 +67,7 @@ def process_incoming_sms(session: Session, sms_text: str):
             "message": "Transaction enregistrée",
             "classification": classification,
             "data": db_transaction,
+            "transaction_id": str(db_transaction.id_transaction),
         }
     except IntegrityError:
         session.rollback()

@@ -35,7 +35,26 @@ def parse_mobile_money_sms(sms_text: str) -> Optional[Dict]:
         # Normalise le numéro malgache en supprimant les espaces et points
         numero_client = client_match.group(0).replace(" ", "").replace(".", "")
 
-    if montant_match and ref_match:
+    # Vérifie qu'il s'agit bien d'un message de transaction avec un montant.
+    is_transaction = any(
+        keyword in lower_text
+        for keyword in [
+            "retrait",
+            "retir",
+            "transfert",
+            "envoy",
+            "credit",
+            "crédit",
+            "reçu",
+            "recu",
+            "versement",
+            "dépot",
+            "depot",
+            "montant",
+        ]
+    )
+
+    if montant_match and is_transaction:
         raw_montant = montant_match.group(1).replace(" ", "").replace(".", "")
         montant = float(raw_montant)
 
@@ -48,13 +67,17 @@ def parse_mobile_money_sms(sms_text: str) -> Optional[Dict]:
         else:
             transaction_type = TransactionType.DEPOT
 
-        return {
+        parsed = {
             "montant": montant,
-            "reference": ref_match.group(1),
             "type": transaction_type,
             "operateur": operator,
             "numero_client": numero_client,
             "est_saisie_manuelle": False,
         }
+
+        if ref_match:
+            parsed["reference"] = ref_match.group(1)
+
+        return parsed
 
     return None

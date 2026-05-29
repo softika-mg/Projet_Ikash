@@ -3,7 +3,7 @@ from sqlmodel import Session
 from app.database import get_session
 from app.services import sms_services
 from app.security.get_api_key import get_api_key
-from app.schemas.sms_schemas import SmsReceiveRequest
+from app.schemas.sms_schemas import SmsClassificationReport, SmsReceiveRequest
 
 # Routeur pour la réception et le traitement des SMS entrants
 router = APIRouter(prefix="/sms", tags=["SMS Receiver"])
@@ -22,4 +22,18 @@ async def receive_and_parse_sms(
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Erreur lors du traitement SMS : {str(e)}"
+        )
+
+
+@router.post("/report", response_model=SmsClassificationReport)
+async def get_sms_classification_report(
+    payload: SmsReceiveRequest,
+    api_key: str = Depends(get_api_key),
+):
+    """Génère un rapport de classification SMS sans enregistrer de transaction."""
+    try:
+        return sms_services.generate_sms_report(payload.text)
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"Erreur lors de la génération du rapport : {str(e)}"
         )

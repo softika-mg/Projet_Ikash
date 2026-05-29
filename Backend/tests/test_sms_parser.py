@@ -26,3 +26,11 @@ class TestSmsParser(unittest.TestCase):
         sms = "Bonjour, ceci est un message sans transaction."
         parsed = parse_mobile_money_sms(sms)
         self.assertIsNone(parsed)
+
+    def test_parse_depot_sms_without_reference(self):
+        sms = "Montant de 25000 Ar reçu sur votre compte"
+        parsed = parse_mobile_money_sms(sms)
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed["montant"], 25000.0)
+        self.assertEqual(parsed["type"], TransactionType.DEPOT)
+        self.assertNotIn("reference", parsed)
