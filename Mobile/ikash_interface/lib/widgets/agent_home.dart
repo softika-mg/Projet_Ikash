@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../database/app_database.dart';
 import '../services/auth_service.dart';
 import '../views/add_transaction_view.dart';
 import '../services/sms_sync_service.dart';
 import '../models/enum.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../views/history_view.dart';
+import '../views/transaction_details_view.dart'; // Importation de notre nouvelle vue
 import '../core/utils/formatters.dart';
 import '../views/sms_sync_validation_view.dart';
 
@@ -53,36 +55,70 @@ class AgentHome extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Header ---
+              // --- Salutations chaleureuses et personnalisées ---
               Text(
-                "Bonjour, ${user?.nom ?? 'Agent'}",
+                "Ravi de vous retrouver, ${user?.nom ?? 'partenaire'}",
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // --- Carte du Solde Global (Commissions) ---
-              _buildMainBalanceCard(theme, entrees, sorties, commissions),
-
+              Text(
+                "Voici le point sur vos activités d'aujourd'hui",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.hintColor,
+                ),
+              ),
               const SizedBox(height: 25),
 
-              // --- Mini-Cartes des Puces (Horizontal) ---
-              Text("Mes Puces", style: theme.textTheme.titleMedium),
+              // --- Tableau de bord : Valorisation du travail ---
+              _buildMainBalanceCard(theme, entrees, sorties, commissions),
+
+              const SizedBox(height: 30),
+
+              // --- Section Puces : État du matériel de travail ---
+              Row(
+                children: [
+                  Icon(
+                    LucideIcons.smartphone,
+                    size: 18,
+                    color: theme.primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Vos puces de transaction",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 110, // Légèrement augmenté pour le confort
+                height: 115,
                 child: StreamBuilder<List<AgentNumber>>(
                   stream: pucesStream,
                   builder: (context, puceSnapshot) {
-                    final puces = puceSnapshot.data ?? [];
-                    if (puces.isEmpty)
-                      return const Text("Aucune puce configurée");
+                    final pucesList = puceSnapshot.data ?? [];
+                    if (pucesList.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.disabledColor.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Aucune puce n'est configurée pour le moment.",
+                          ),
+                        ),
+                      );
+                    }
                     return ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: puces.length,
+                      itemCount: pucesList.length,
                       itemBuilder: (context, index) =>
-                          _buildMiniPuceCard(puces[index], theme),
+                          _buildMiniPuceCard(pucesList[index], theme),
                     );
                   },
                 ),
@@ -90,15 +126,21 @@ class AgentHome extends ConsumerWidget {
 
               const SizedBox(height: 30),
 
-              // --- Actions Rapides ---
-              Text("Actions rapides", style: theme.textTheme.titleMedium),
+              // --- Espace d'action ---
+              Text(
+                "Que souhaitez-vous faire ?",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 15),
               _buildSyncAction(context, ref, pendingSmsAsync),
               _buildActionButton(
                 context: context,
-                icon: LucideIcons.plusCircle,
-                label: "Saisie manuelle",
-                subtitle: "Digitaliser une opération papier",
+                icon: LucideIcons.filePlus,
+                label: "Enregistrer une opération manuelle",
+                subtitle:
+                    "Pour ajouter un transfert depuis votre cahier papier",
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -109,31 +151,58 @@ class AgentHome extends ConsumerWidget {
 
               const SizedBox(height: 30),
 
-              // --- Mini Historique ---
+              // --- Section Flux d'activité ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Dernières opérations",
-                    style: theme.textTheme.titleMedium,
+                  Row(
+                    children: [
+                      Icon(
+                        LucideIcons.history,
+                        size: 18,
+                        color: theme.hintColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Vos derniers mouvements",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  TextButton(
+                  TextButton.icon(
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const HistoryView(),
                       ),
                     ),
-                    child: const Text("Voir tout"),
+                    icon: const Icon(LucideIcons.eye, size: 16),
+                    label: const Text("Tout voir"),
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
               if (transactions.isEmpty)
-                const Center(child: Text("Aucune transaction aujourd'hui"))
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 30),
+                  child: Center(
+                    child: Text(
+                      "Aucune transaction n'a encore été enregistrée aujourd'hui.",
+                      style: TextStyle(
+                        color: theme.hintColor,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
               else
                 ...transactions
                     .take(5)
-                    .map((tx) => _buildHistoryLine(tx, theme, puces))
+                    .map((tx) => _buildHistoryLine(context, tx, theme, puces))
                     .toList(),
             ],
           ),
@@ -142,7 +211,7 @@ class AgentHome extends ConsumerWidget {
     );
   }
 
-  // --- COMPOSANTS ---
+  // --- COMPOSANTS INTERACTIFS ET HUMAINS ---
 
   Widget _buildMainBalanceCard(
     ThemeData theme,
@@ -152,50 +221,62 @@ class AgentHome extends ConsumerWidget {
   ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [theme.primaryColor, theme.primaryColor.withBlue(180)],
+          colors: [theme.primaryColor, theme.primaryColor.withBlue(160)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: theme.primaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: theme.primaryColor.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         children: [
-          const Text(
-            "Commissions du jour",
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(LucideIcons.award, color: Colors.white70, size: 16),
+              SizedBox(width: 6),
+              Text(
+                "Vos gains cumulés aujourd'hui",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 5),
-          // Utilisation du Formatter ici
+          const SizedBox(height: 10),
           Text(
             CurrencyFormatter.format(comm),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
             ),
           ),
-          const Divider(color: Colors.white24, height: 35),
+          const Divider(color: Colors.white24, height: 40),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildQuickStat(
-                LucideIcons.trendingUp,
-                "Entrées",
+                LucideIcons.arrowDownLeft,
+                "Total des retraits",
                 CurrencyFormatter.format(inVal),
               ),
+              Container(width: 1, height: 30, color: Colors.white12),
               _buildQuickStat(
-                LucideIcons.trendingDown,
-                "Sorties",
+                LucideIcons.arrowUpRight,
+                "Total des dépôts",
                 CurrencyFormatter.format(outVal),
               ),
             ],
@@ -206,20 +287,17 @@ class AgentHome extends ConsumerWidget {
   }
 
   Widget _buildMiniPuceCard(AgentNumber puce, ThemeData theme) {
-    // 1. On récupère la valeur String et on essaie de la transformer en entier
-    // 2. Si c'est nul ou invalide, on met une couleur par défaut (ex: Gris)
     final colorValue = int.tryParse(puce.color ?? "");
-    final Color color = colorValue != null
-        ? Color(colorValue)
-        : Colors.grey; // Couleur de secours
+    final Color color = colorValue != null ? Color(colorValue) : Colors.grey;
+
     return Container(
-      width: 150,
+      width: 155,
       margin: const EdgeInsets.only(right: 12, bottom: 5),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.18), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,28 +305,37 @@ class AgentHome extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.smartphone, size: 14, color: color),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
               const SizedBox(width: 6),
               Text(
                 puce.operateur.name.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: color,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          // Utilisation du Formatter ici
           Text(
             CurrencyFormatter.format(puce.soldePuce),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              letterSpacing: -0.5,
+            ),
           ),
+          const SizedBox(height: 2),
           Text(
             puce.numeroPuce,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               color: theme.hintColor,
               fontWeight: FontWeight.w500,
             ),
@@ -259,6 +346,7 @@ class AgentHome extends ConsumerWidget {
   }
 
   Widget _buildHistoryLine(
+    BuildContext context,
     Transaction tx,
     ThemeData theme,
     List<AgentNumber> puces,
@@ -267,52 +355,79 @@ class AgentHome extends ConsumerWidget {
     Color opColor;
 
     try {
-      // LOGIQUE ROBUSTE : On cherche par Opérateur plutôt que par ID
-      // Cela garantit que même les transactions avec agentNumberId = null sont colorées
       final puceIdoine = puces.firstWhere((p) => p.operateur == tx.operateur);
-
       if (puceIdoine.color != null && puceIdoine.color!.isNotEmpty) {
         opColor = Color(int.parse(puceIdoine.color!));
       } else {
-        opColor = _getOpColor(tx.operateur); // Fallback si couleur vide
+        opColor = _getOpColor(tx.operateur);
       }
     } catch (e) {
-      // Si aucune puce n'est configurée pour cet opérateur, on utilise le fallback
       opColor = _getOpColor(tx.operateur);
     }
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: opColor.withOpacity(0.1),
-        child: Icon(
-          isRetrait ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight,
-          size: 18,
-          color: opColor,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.08)),
+      ),
+      child: ListTile(
+        onTap: () {
+          // Connexion naturelle avec le nouvel écran de détails interactif
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TransactionDetailView(
+                transaction: tx,
+                operatorColor: opColor,
+              ),
+            ),
+          );
+        },
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: CircleAvatar(
+          backgroundColor: opColor.withOpacity(0.1),
+          child: Icon(
+            isRetrait ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight,
+            size: 18,
+            color: opColor,
+          ),
         ),
-      ),
-      title: Text(
-        tx.nomClient?.isNotEmpty == true ? tx.nomClient! : tx.reference,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        DateFormat('HH:mm').format(tx.horodatage),
-        style: const TextStyle(fontSize: 12),
-      ),
-      trailing: Text(
-        "${isRetrait ? '+' : '-'}${CurrencyFormatter.format(tx.montant)}",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          color: isRetrait ? Colors.green.shade700 : Colors.red.shade700,
+        title: Text(
+          tx.nomClient?.isNotEmpty == true
+              ? tx.nomClient!
+              : "Client non enregistré",
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          "Enregistré à ${DateFormat('HH:mm').format(tx.horodatage)}",
+          style: TextStyle(fontSize: 12, color: theme.hintColor),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "${isRetrait ? '+' : '-'}${CurrencyFormatter.format(tx.montant)}",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isRetrait ? Colors.green.shade700 : Colors.red.shade700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              LucideIcons.chevronRight,
+              size: 16,
+              color: theme.hintColor.withOpacity(0.5),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  // --- Helpers ---
 
   Color _getOpColor(OperatorType type) {
     switch (type) {
@@ -333,20 +448,20 @@ class AgentHome extends ConsumerWidget {
         Row(
           children: [
             Icon(icon, color: Colors.white70, size: 14),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: 15,
           ),
         ),
       ],
@@ -361,20 +476,42 @@ class AgentHome extends ConsumerWidget {
     return _buildActionButton(
       context: context,
       icon: LucideIcons.refreshCw,
-      label: "Synchroniser les SMS",
-      subtitle: "Détecter les nouvelles transactions",
+      label: "Relever la boîte de réception SMS",
+      subtitle: "Vérifier et ajouter automatiquement les transferts reçus",
       trailing: pendingSmsAsync.maybeWhen(
         data: (count) => count > 0
-            ? Badge(label: Text('$count'), backgroundColor: Colors.red)
-            : const Icon(LucideIcons.chevronRight, size: 18),
-        orElse: () => const Icon(LucideIcons.chevronRight, size: 18),
+            ? Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade600,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "$count en attente",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            : Icon(
+                LucideIcons.chevronRight,
+                size: 18,
+                color: Theme.of(context).hintColor,
+              ),
+        orElse: () => Icon(
+          LucideIcons.chevronRight,
+          size: 18,
+          color: Theme.of(context).hintColor,
+        ),
       ),
       onTap: () async {
         if (await Permission.sms.request().isGranted) {
-          // 1. On récupère les SMS (ils vont dans la table smsReceived)
           await ref.read(smsSyncProvider).fetchAndParseSms();
-
-          // 2. On redirige vers la vue de validation
           if (context.mounted) {
             Navigator.push(
               context,
@@ -398,25 +535,32 @@ class AgentHome extends ConsumerWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-
       child: ListTile(
         onTap: onTap,
-
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: Colors.grey.shade200, width: 1.5),
         ),
-
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Icon(icon, color: Theme.of(context).primaryColor),
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.08),
+          child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
         ),
-
-        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-
-        trailing: trailing ?? const Icon(LucideIcons.chevronRight, size: 18),
+        title: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
+        ),
+        trailing:
+            trailing ??
+            Icon(
+              LucideIcons.chevronRight,
+              size: 18,
+              color: Theme.of(context).hintColor,
+            ),
       ),
     );
   }

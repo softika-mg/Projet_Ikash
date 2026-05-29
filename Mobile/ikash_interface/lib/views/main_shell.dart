@@ -41,7 +41,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final List<Widget> pages = isAdmin
         ? [const AdminDashboard(), const AdminLogsView(), const SmsInboxView()]
-        : [const AgentHome(), const HistoryView(), const StatsView()];
+        : [ const AgentHome(), const HistoryView(), const StatsView()];
 
     return Scaffold(
       key: _scaffoldKey,

@@ -7,6 +7,7 @@ import '../database/app_database.dart';
 import '../models/enum.dart';
 import '../core/utils/formatters.dart';
 import '../services/auth_service.dart';
+import 'transaction_details_view.dart';
 
 class HistoryView extends ConsumerStatefulWidget {
   const HistoryView({super.key});
@@ -115,8 +116,17 @@ class _HistoryViewState extends ConsumerState<HistoryView> {
                     final opColor = _getTransactionColor(tx, puces);
 
                     return InkWell(
-                      onTap: () =>
-                          _showTransactionDetails(context, theme, tx, opColor),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TransactionDetailView(
+                              transaction: tx,
+                              operatorColor: opColor,
+                            ),
+                          ),
+                        );
+                      },
                       borderRadius: BorderRadius.circular(16),
                       child: _buildTransactionCard(theme, tx, opColor),
                     );
